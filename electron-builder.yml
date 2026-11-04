@@ -1,0 +1,25 @@
+appId: br.com.bizapp.readiness-deploy-accelerator
+productName: Readiness Deploy Accelerator
+copyright: Copyright © 2026 Bizapp
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+extraResources:
+  - from: modules
+    to: modules
+    filter:
+      - "**/*"
+win:
+  target: nsis
+  icon: build/icon.png
+  executableName: ReadinessDeployAccelerator
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Readiness Deploy Accelerator
+  artifactName: Readiness-Deploy-Accelerator-Setup-${version}.${ext}

@@ -1,0 +1,258 @@
+{
+  "id": "biblioteca-prompts",
+  "nome": "Biblioteca de Prompts e Skills",
+  "versao": "1.3.11",
+  "resumo": "Catálogo de prompts e skills do Copilot no SharePoint, pronto para virar guia no Teams.",
+  "descricao": "Cria as listas, instala as web parts da Biblioteca e do Dashboard e publica as páginas em tela cheia num site do SharePoint.",
+  "tempoEstimadoMin": 15,
+  "papeisNecessarios": [
+    "Administrador do SharePoint",
+    "Permissão para consentir apps no Entra ID"
+  ],
+  "preRequisitos": [
+    {
+      "tipo": "pwsh",
+      "versaoMinima": "7.4"
+    },
+    {
+      "tipo": "modulo-ps",
+      "nome": "PnP.PowerShell",
+      "versaoMinima": "3.0",
+      "instalavel": true
+    }
+  ],
+  "etapas": [
+    {
+      "id": "app-registration",
+      "titulo": "Registrar o app no Entra ID",
+      "descricao": "Cria no Entra ID o app que o instalador e o PnP.PowerShell usam para acessar o SharePoint. O login abre no navegador escolhido no canto inferior esquerdo. Se o app já existe neste tenant, cole o Client ID e avance.",
+      "campos": [
+        {
+          "id": "Tenant",
+          "rotulo": "Tenant",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "empresax",
+          "ajuda": "Só o prefixo, sem .onmicrosoft.com.",
+          "padraoRegex": "^[A-Za-z0-9-]+$",
+          "mensagemRegex": "Use só letras, números e hífen."
+        },
+        {
+          "id": "AppName",
+          "rotulo": "Nome do app",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Bizapp - Biblioteca de Prompts e Skills"
+        },
+        {
+          "id": "ClientId",
+          "rotulo": "Client ID",
+          "tipo": "guid",
+          "obrigatorio": true,
+          "ajuda": "Preenchido automaticamente ao registrar o app. Guarde este valor."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-registrar-app.ps1",
+        "rotuloBotao": "Registrar app agora",
+        "obrigatorio": false,
+        "entradas": [
+          "Tenant",
+          "AppName"
+        ],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@azure-powershell",
+            "tenant": "{{Tenant}}.onmicrosoft.com",
+            "escopo": "https://graph.microsoft.com/.default",
+            "proposito": "Criar o app no Entra ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": "permissoes",
+      "titulo": "Validar permissões",
+      "descricao": "Ao validar, o login pede para aceitar as permissões do app. Se você é administrador, marque \"Consentir em nome da sua organização\" e aceite. Se não é, envie o pedido de aprovação na própria tela de login e valide de novo depois que o administrador aprovar.",
+      "instrucoes": [
+        "O administrador aprova o pedido no Entra ID, em Aplicativos empresariais > Solicitações de consentimento de administrador.",
+        "Ou concede direto no app: Registros de aplicativo > o app > Permissões de API > Conceder consentimento do administrador.",
+        "Depois da aprovação, clique em \"Validar permissões\" de novo."
+      ],
+      "links": [
+        {
+          "rotulo": "Abrir o app no Entra ID",
+          "url": "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/~/CallAnAPI/appId/{{ClientId}}"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-validar-permissoes.ps1",
+        "rotuloBotao": "Validar permissões",
+        "obrigatorio": true,
+        "entradas": [
+          "Tenant",
+          "ClientId"
+        ],
+        "tokens": [
+          {
+            "nome": "SharePoint",
+            "clientId": "{{ClientId}}",
+            "tenant": "{{Tenant}}.onmicrosoft.com",
+            "escopo": "https://{{Tenant}}.sharepoint.com/.default",
+            "proposito": "Aceitar as permissões do app e acessar o SharePoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "listas",
+      "titulo": "Criar as listas",
+      "descricao": "Cria as listas que faltam e as colunas que faltam nas listas existentes. Pode ser repetido sem perder dados.",
+      "campos": [
+        {
+          "id": "SiteUrl",
+          "rotulo": "URL do site do SharePoint",
+          "tipo": "url",
+          "obrigatorio": true,
+          "padrao": "https://{{Tenant}}.sharepoint.com/sites/",
+          "padraoRegex": "^https://[^/]+\\.sharepoint\\.com/(sites|teams)/[^/]+/?$",
+          "mensagemRegex": "Informe a URL de um site, ex.: https://empresax.sharepoint.com/sites/copilot"
+        },
+        {
+          "id": "PromptsListTitle",
+          "rotulo": "Nome da lista de prompts",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Biblioteca de Prompts e Skills"
+        },
+        {
+          "id": "FavoritesListTitle",
+          "rotulo": "Nome da lista de favoritos",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "⭐ Meus Favoritos"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-provisionar-listas.ps1",
+        "rotuloBotao": "Criar as listas",
+        "obrigatorio": true,
+        "entradas": [
+          "Tenant",
+          "SiteUrl",
+          "ClientId",
+          "PromptsListTitle",
+          "FavoritesListTitle"
+        ],
+        "tokens": [
+          {
+            "nome": "SharePoint",
+            "clientId": "{{ClientId}}",
+            "tenant": "{{Tenant}}.onmicrosoft.com",
+            "escopo": "https://{{Tenant}}.sharepoint.com/.default",
+            "proposito": "Acessar o SharePoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pacote",
+      "titulo": "Publicar o pacote no App Catalog",
+      "descricao": "Este passo é manual. As páginas são criadas automaticamente na próxima etapa.",
+      "instrucoes": [
+        "Abra o centro de administração do SharePoint e vá em Mais recursos > Apps > App Catalog.",
+        "Em Apps for SharePoint, clique em Upload, escolha o arquivo sharepoint-biblioteca-prompt.sppkg e clique em Deploy.",
+        "No site {{SiteUrl}}, abra Novo > App e adicione \"sharepoint-biblioteca-prompt-webpart\".",
+        "Aguarde o app aparecer em Conteúdo do site."
+      ],
+      "arquivos": [
+        {
+          "rotulo": "Mostrar o arquivo .sppkg",
+          "caminho": "assets/sharepoint-biblioteca-prompt.sppkg"
+        }
+      ],
+      "links": [
+        {
+          "rotulo": "Abrir o centro de administração",
+          "url": "https://{{Tenant}}-admin.sharepoint.com"
+        }
+      ],
+      "confirmacao": "Publiquei o .sppkg no App Catalog e adicionei o app no site."
+    },
+    {
+      "id": "paginas",
+      "titulo": "Criar as páginas",
+      "descricao": "Cria as páginas, insere as web parts, aplica o layout de tela cheia e desliga a barra social.",
+      "campos": [
+        {
+          "id": "BibliotecaPageName",
+          "rotulo": "Nome da página da Biblioteca",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Biblioteca-de-Prompts-e-Skills",
+          "ajuda": "Prefira hífen entre as palavras."
+        },
+        {
+          "id": "DashboardPageName",
+          "rotulo": "Nome da página do Dashboard (opcional)",
+          "tipo": "texto",
+          "padrao": "Dashboard-Biblioteca-de-Prompts-e-Skills"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/04-criar-paginas.ps1",
+        "rotuloBotao": "Criar as páginas",
+        "obrigatorio": true,
+        "entradas": [
+          "Tenant",
+          "SiteUrl",
+          "ClientId",
+          "PromptsListTitle",
+          "FavoritesListTitle",
+          "BibliotecaPageName",
+          "DashboardPageName"
+        ],
+        "tokens": [
+          {
+            "nome": "SharePoint",
+            "clientId": "{{ClientId}}",
+            "tenant": "{{Tenant}}.onmicrosoft.com",
+            "escopo": "https://{{Tenant}}.sharepoint.com/.default",
+            "proposito": "Acessar o SharePoint"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      {
+        "rotulo": "Site",
+        "valor": "{{SiteUrl}}"
+      },
+      {
+        "rotulo": "Lista de prompts",
+        "valor": "{{PromptsListTitle}}"
+      },
+      {
+        "rotulo": "Lista de favoritos",
+        "valor": "{{FavoritesListTitle}}"
+      },
+      {
+        "rotulo": "Client ID (guarde)",
+        "valor": "{{ClientId}}"
+      }
+    ],
+    "links": [
+      {
+        "rotulo": "Abrir a Biblioteca",
+        "url": "{{BibliotecaUrl}}"
+      },
+      {
+        "rotulo": "Abrir o Dashboard",
+        "url": "{{DashboardUrl}}"
+      }
+    ]
+  }
+}
