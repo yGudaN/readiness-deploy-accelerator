@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { aplicarModelo } from '@shared/modelo'
 import type { CampoDef, EtapaDef, ModuloManifesto, Navegador, StatusPreRequisito } from '@shared/tipos'
 import { api, emSimulador } from './api'
+import { Seletor } from './componentes/Seletor'
 import { lerNavegadorPreferido, NavegadorContexto, salvarNavegadorPreferido } from './navegador'
 import { TelaCatalogo } from './telas/TelaCatalogo'
 import { TelaEtapa } from './telas/TelaEtapa'
@@ -265,16 +266,17 @@ export function App() {
             ]
           })}
         </ol>
-        <label className="lateral__navegador">
+        <div className="lateral__navegador">
           <span>Logins e links abrem no</span>
-          <select value={navegador} onChange={(e) => escolherNavegador(e.target.value)}>
-            {navegadores.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.nome}
-              </option>
-            ))}
-          </select>
-        </label>
+          <Seletor
+            rotulo="Navegador para logins e links"
+            tema="escuro"
+            paraCima
+            opcoes={navegadores}
+            valor={navegador}
+            onEscolher={escolherNavegador}
+          />
+        </div>
         <div className="lateral__rodape">
           Readiness Deploy Accelerator {versao && `v${versao}`}
           {emSimulador && ' · modo simulador'}

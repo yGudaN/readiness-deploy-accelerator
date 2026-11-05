@@ -67,25 +67,94 @@ button, input { font: inherit; letter-spacing: inherit; }
 .lateral__titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.5); margin: 18px 12px 6px; }
 .lateral__lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .lateral__rodape { font-size: 12px; color: rgba(255, 255, 255, 0.45); padding: 12px 12px 0; }
-.lateral__navegador { display: flex; flex-direction: column; gap: 6px; margin: 12px 12px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
-.lateral__navegador select {
-  font: inherit;
+.lateral__navegador { display: flex; flex-direction: column; gap: 8px; margin: 12px 4px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
+
+/* ---------- Seletor (lista de escolha) ---------- */
+.seletor { position: relative; min-width: 0; }
+.seletor__botao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 14px;
+  border-radius: var(--biz-pill);
   font-size: 13px;
-  color: var(--biz-white);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px;
-  padding: 8px 10px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
-.lateral__navegador select option { color: var(--biz-black); }
+.seletor__texto { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seletor__seta {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.seletor__botao[aria-expanded='true'] .seletor__seta { transform: translateY(2px) rotate(225deg); }
+/* Quando a lista abre para cima, a seta aponta para cima */
+.seletor--para-cima .seletor__seta { transform: translateY(2px) rotate(225deg); }
+.seletor--para-cima .seletor__botao[aria-expanded='true'] .seletor__seta { transform: translateY(-2px) rotate(45deg); }
+
+.seletor__lista {
+  position: absolute;
+  z-index: 10;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 220px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(6, 1, 10, 0.28);
+}
+.seletor--para-cima .seletor__lista { top: auto; bottom: calc(100% + 6px); }
+.seletor__opcao {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.seletor__marca {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  color: var(--biz-white);
+}
+.seletor__opcao[aria-selected='true'] { font-weight: 600; }
+.seletor__opcao[aria-selected='true'] .seletor__marca { background: var(--biz-gradient-01); }
+
+/* Tema escuro: barra lateral */
+.seletor--escuro .seletor__botao { color: var(--biz-white); background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); }
+.seletor--escuro .seletor__botao:hover,
+.seletor--escuro .seletor__botao[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.3); }
+.seletor--escuro .seletor__lista { background: var(--biz-card-escuro); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.85); }
+.seletor--escuro .seletor__opcao--ativa { background: rgba(255, 255, 255, 0.1); color: var(--biz-white); }
+
+/* Tema claro: conteudo */
+.seletor--claro .seletor__botao { color: var(--biz-purple); background: transparent; border: 1px solid var(--biz-purple); }
+.seletor--claro .seletor__botao:hover,
+.seletor--claro .seletor__botao[aria-expanded='true'] { background: rgba(149, 60, 204, 0.06); }
+.seletor--claro .seletor__lista { left: auto; background: var(--biz-white); border: 1px solid var(--biz-off-white); color: var(--biz-black); }
+.seletor--claro .seletor__opcao--ativa { background: var(--biz-off-white); }
 
 /* ---------- Login ---------- */
 .login { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 14px; padding: 18px 22px; }
 .login__texto { flex: 1; min-width: 240px; }
 .login__titulo { font-weight: 600; }
 .login__detalhe { color: var(--biz-cinza); font-size: 13px; }
-.login select { border: 1px solid var(--biz-cinza-claro); border-radius: 10px; padding: 7px 10px; background: var(--biz-white); font-size: 13px; }
-
 .passo {
   display: flex;
   align-items: center;

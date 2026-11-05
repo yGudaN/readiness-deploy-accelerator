@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api'
 import { useNavegador } from '../navegador'
+import { Seletor } from './Seletor'
 import type { EstadoExecucao } from '../useExecucoes'
 
 /**
@@ -10,7 +11,6 @@ import type { EstadoExecucao } from '../useExecucoes'
 export function CartaoLogin({ execucao }: { execucao: EstadoExecucao }) {
   const { lista, nomeDe } = useNavegador()
   const [copiado, setCopiado] = useState(false)
-  const [outro, setOutro] = useState('')
   const login = execucao.login
 
   if (!login) return null
@@ -40,21 +40,7 @@ export function CartaoLogin({ execucao }: { execucao: EstadoExecucao }) {
       <button className="botao botao--texto botao--pequeno" onClick={() => void copiar()}>
         {copiado ? '✓ Link copiado' : 'Copiar link'}
       </button>
-      <select
-        aria-label="Abrir o login em outro navegador"
-        value={outro}
-        onChange={(e) => {
-          setOutro('')
-          if (e.target.value) reabrir(e.target.value)
-        }}
-      >
-        <option value="">Abrir em outro navegador…</option>
-        {lista.map((n) => (
-          <option key={n.id} value={n.id}>
-            {n.nome}
-          </option>
-        ))}
-      </select>
+      <Seletor rotulo="Abrir o login em outro navegador" vazio="Abrir em outro navegador" opcoes={lista} onEscolher={reabrir} />
     </div>
   )
 }

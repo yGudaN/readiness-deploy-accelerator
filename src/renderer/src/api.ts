@@ -46,7 +46,7 @@ function criarSimulador(): ApiInstalador {
       ]
     },
     listarNavegadores: async () => [
-      { id: 'padrao', nome: 'Navegador padrão do Windows' },
+      { id: 'padrao', nome: 'Padrão do Windows' },
       { id: 'Google Chrome', nome: 'Google Chrome' },
       { id: 'Microsoft Edge', nome: 'Microsoft Edge' }
     ],

@@ -30,5 +30,8 @@ export const NavegadorContexto = createContext<ContextoNavegador>({ atual: NAVEG
 
 export function useNavegador(): ContextoNavegador & { nomeDe: (id?: string) => string } {
   const ctx = useContext(NavegadorContexto)
-  return { ...ctx, nomeDe: (id) => ctx.lista.find((n) => n.id === id)?.nome ?? 'navegador padrão' }
+  // Usado em frases como "Faça o login no <nome>"
+  const nomeDe = (id?: string): string =>
+    id === NAVEGADOR_PADRAO ? 'navegador padrão' : (ctx.lista.find((n) => n.id === id)?.nome ?? 'navegador padrão')
+  return { ...ctx, nomeDe }
 }

@@ -48,7 +48,7 @@ export async function listarNavegadores(): Promise<Navegador[]> {
       cache = []
     }
   }
-  return [{ id: NAVEGADOR_PADRAO, nome: 'Navegador padrão do Windows' }, ...cache.map(({ id, nome }) => ({ id, nome }))]
+  return [{ id: NAVEGADOR_PADRAO, nome: 'Padrão do Windows' }, ...cache.map(({ id, nome }) => ({ id, nome }))]
 }
 
 /** Abre a URL no navegador escolhido. Ids desconhecidos caem no navegador padrao. */
