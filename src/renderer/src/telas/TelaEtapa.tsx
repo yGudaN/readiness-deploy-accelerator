@@ -1,6 +1,7 @@
 import { aplicarModelo } from '@shared/modelo'
 import type { EtapaDef, ModuloManifesto } from '@shared/tipos'
 import { api } from '../api'
+import { BarraProgresso } from '../componentes/BarraProgresso'
 import { Campo } from '../componentes/Campo'
 import { CartaoLogin } from '../componentes/CartaoLogin'
 import { Log } from '../componentes/Log'
@@ -104,6 +105,7 @@ export function TelaEtapa(p: Props) {
             {estado && <span className={`execucao__estado ${estado.classe}`}>{estado.texto}</span>}
           </div>
           {execucao && <CartaoLogin execucao={execucao} />}
+          {execucao && <BarraProgresso execucao={execucao} />}
           <Log linhas={execucao?.linhas ?? []} />
         </div>
       )}

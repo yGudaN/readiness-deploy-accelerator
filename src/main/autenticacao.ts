@@ -12,8 +12,13 @@ import type { AddressInfo } from 'node:net'
 /** Clientes publicos conhecidos, usados antes de o app do cliente existir. */
 const CLIENTES_CONHECIDOS: Record<string, string> = {
   // Mesmo app que o PnP.PowerShell usa para registrar apps (Microsoft Azure PowerShell)
-  '@azure-powershell': '1950a258-227b-4e31-a9cf-717495945fc2'
+  '@azure-powershell': '1950a258-227b-4e31-a9cf-717495945fc2',
+  // App publico do Power Platform CLI (pac), feito para acessar o Dataverse
+  '@power-platform-cli': '9cee029c-6210-4654-90bb-17e6e9d36617'
 }
+
+/** Tenants genericos: a conta e escolhida no login, entao nao ha "ultima conta" para sugerir. */
+const TENANTS_GENERICOS = new Set(['organizations', 'common'])
 
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const TENANT = /^[a-z0-9][a-z0-9.-]*$/i
@@ -165,7 +170,8 @@ async function loginInterativo(p: PedidoToken, ctx: ContextoLogin): Promise<Resp
   const retorno = await iniciarRetorno(estado)
   const redirectUri = `http://localhost:${retorno.porta}`
   const escopo = `${p.escopo} offline_access openid profile`
-  const conta = contaPorTenant.get(p.tenant.toLowerCase())
+  // Em tenant generico a conta pode ser de outro cliente: sempre deixa a pessoa escolher
+  const conta = TENANTS_GENERICOS.has(p.tenant.toLowerCase()) ? undefined : contaPorTenant.get(p.tenant.toLowerCase())
 
   const url = new URL(`https://login.microsoftonline.com/${p.tenant}/oauth2/v2.0/authorize`)
   url.search = new URLSearchParams({

@@ -76,6 +76,9 @@ export function iniciarExecucao(
         if (ev.tipo === 'saida') {
           saidas[ev.nome] = String(ev.valor ?? '')
           emitir({ execucaoId, tipo: 'saida', nome: ev.nome, valor: saidas[ev.nome] })
+        } else if (ev.tipo === 'progresso') {
+          const percentual = Math.min(100, Math.max(0, Number(ev.percentual) || 0))
+          emitir({ execucaoId, tipo: 'progresso', percentual, fase: String(ev.fase ?? '') })
         } else {
           log(ev.nivel ?? 'info', String(ev.mensagem ?? ''))
         }

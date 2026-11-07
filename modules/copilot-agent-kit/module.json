@@ -1,0 +1,185 @@
+{
+  "id": "copilot-agent-kit",
+  "nome": "Copilot Agent Kit",
+  "versao": "1.0.0",
+  "resumo": "Kit oficial da Microsoft (Power CAT) para testar, analisar e governar agentes do Copilot Studio.",
+  "descricao": "Conjunto de apps no Power Platform para quem cria e administra agentes: testes automatizados de conversas, indicadores de uso e qualidade, inventário de agentes do tenant, revisão de agentes e hub de conformidade. Ajuda o COE a acompanhar a qualidade e a governança dos agentes publicados.",
+  "tempoEstimadoMin": 45,
+  "papeisNecessarios": [
+    "Administrador do sistema no ambiente",
+    "Administrador do Power Platform ou do ambiente"
+  ],
+  "preRequisitos": [
+    {
+      "tipo": "pwsh",
+      "versaoMinima": "7.4"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "ambiente",
+      "titulo": "Escolher o ambiente",
+      "descricao": "Informe o ambiente do Power Platform (com Dataverse) onde o kit será instalado. O instalador confere o ambiente e a sua permissão antes de alterar qualquer coisa.",
+      "campos": [
+        {
+          "id": "EnvironmentUrl",
+          "rotulo": "URL do ambiente (Dataverse)",
+          "tipo": "url",
+          "obrigatorio": true,
+          "placeholder": "https://orgxxxxxxx.crm.dynamics.com",
+          "ajuda": "Em make.powerapps.com: engrenagem > Detalhes da sessão > URL da instância.",
+          "padraoRegex": "^https://[A-Za-z0-9-]+\\.crm[0-9]*\\.dynamics\\.com/?$",
+          "mensagemRegex": "Informe a URL do Dataverse, ex.: https://org1234567.crm.dynamics.com"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-verificar-ambiente.ps1",
+        "rotuloBotao": "Verificar ambiente",
+        "obrigatorio": true,
+        "entradas": [
+          "EnvironmentUrl"
+        ],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "configuracoes",
+      "titulo": "Configurar o ambiente",
+      "descricao": "Liga os dois recursos que o kit exige no ambiente: componentes de código em canvas apps e Power Apps code apps. Se o instalador não conseguir ligar o code apps (falta de permissão de administrador do Power Platform), ligue pelo admin center e clique em \"Executar novamente\".",
+      "links": [
+        {
+          "rotulo": "Abrir as configurações do ambiente",
+          "url": "https://admin.powerplatform.microsoft.com/manage/environments/environment/{{EnvironmentId}}/settings/Features"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-configurar-ambiente.ps1",
+        "rotuloBotao": "Ligar os recursos",
+        "obrigatorio": true,
+        "entradas": [
+          "EnvironmentUrl"
+        ],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://api.powerplatform.com/.default",
+            "proposito": "Alterar as configurações do ambiente no Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "creator-kit",
+      "titulo": "Instalar o Creator Kit",
+      "descricao": "Dependência obrigatória do Copilot Agent Kit. O instalador baixa a última versão oficial da Microsoft e importa no ambiente (cerca de 3 minutos). Se já estiver instalado, a etapa só confirma.",
+      "script": {
+        "arquivo": "scripts/03-importar-creator-kit.ps1",
+        "rotuloBotao": "Instalar o Creator Kit",
+        "obrigatorio": true,
+        "entradas": [
+          "EnvironmentUrl"
+        ],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "agent-kit",
+      "titulo": "Instalar o Copilot Agent Kit",
+      "descricao": "O instalador baixa a última versão oficial (cerca de 46 MB) e importa no ambiente. A importação costuma levar de 30 a 40 minutos e passa a maior parte do tempo acima de 90%, publicando apps e fluxos: é normal a barra andar devagar no final. Mantenha o instalador aberto.",
+      "script": {
+        "arquivo": "scripts/04-importar-agent-kit.ps1",
+        "rotuloBotao": "Instalar o Copilot Agent Kit",
+        "obrigatorio": true,
+        "entradas": [
+          "EnvironmentUrl"
+        ],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "setup-wizard",
+      "titulo": "Configurar o kit (Setup Wizard)",
+      "descricao": "O kit foi importado com os fluxos desligados. O Setup Wizard do próprio kit cria as conexões, preenche as variáveis de ambiente e liga os fluxos.",
+      "instrucoes": [
+        "Abra os apps do ambiente {{NomeAmbiente}} e inicie o app \"Copilot Agent Kit\".",
+        "Na página inicial do kit, abra o Setup Wizard.",
+        "Siga as etapas: confirmar pré-requisitos, referências de conexão (crie as conexões pedidas), variáveis de ambiente e ativação dos fluxos."
+      ],
+      "links": [
+        {
+          "rotulo": "Abrir os apps do ambiente",
+          "url": "https://make.powerapps.com/environments/{{EnvironmentId}}/apps"
+        },
+        {
+          "rotulo": "Guia do Setup Wizard",
+          "url": "https://learn.microsoft.com/microsoft-copilot-studio/guidance/kit-setup-wizard"
+        }
+      ],
+      "confirmacao": "Concluí o Setup Wizard do Copilot Agent Kit."
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      {
+        "rotulo": "Ambiente",
+        "valor": "{{NomeAmbiente}}"
+      },
+      {
+        "rotulo": "URL",
+        "valor": "{{EnvironmentUrl}}"
+      },
+      {
+        "rotulo": "Creator Kit",
+        "valor": "{{VersaoCreatorKit}}"
+      },
+      {
+        "rotulo": "Copilot Agent Kit",
+        "valor": "{{VersaoAgentKit}}"
+      }
+    ],
+    "links": [
+      {
+        "rotulo": "Abrir os apps do ambiente",
+        "url": "https://make.powerapps.com/environments/{{EnvironmentId}}/apps"
+      }
+    ]
+  },
+  "oQueInstala": [
+    "Creator Kit (CreatorKitCore): componentes visuais da Microsoft exigidos pelo kit",
+    "Copilot Agent Kit: apps, tabelas e fluxos no ambiente escolhido (fluxos desligados até o Setup Wizard)",
+    "Configurações do ambiente: componentes de código em canvas apps e Power Apps code apps ligados"
+  ]
+}

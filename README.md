@@ -18,13 +18,19 @@ Electron (telas em React)  ──IPC──▶  processo principal  ──spawn�
 ## Estrutura
 
 ```
-instalador/
+ReadinessDeployAccelerator/
 ├── modules/
 │   ├── _compartilhado/BizappInstalador.psm1   funções que os scripts usam para falar com o app
-│   └── biblioteca-prompts/
-│       ├── module.json                         manifesto: etapas, campos, pré-requisitos, resumo
-│       ├── scripts/                            01-registrar-app, 02-validar-permissoes, 03-provisionar-listas, 04-criar-paginas
-│       └── assets/                             .sppkg da Biblioteca (atualizado com npm run sincronizar)
+│   ├── biblioteca-prompts/
+│   │   ├── module.json                         manifesto: etapas, campos, pré-requisitos, resumo
+│   │   ├── scripts/                            01-registrar-app, 02-validar-permissoes, 03-provisionar-listas, 04-criar-paginas
+│   │   └── assets/                             .sppkg da Biblioteca (atualizado com npm run sincronizar)
+│   └── copilot-agent-kit/
+│       ├── module.json
+│       └── scripts/                            Dataverse.psm1 (Web API + importação com progresso),
+│                                               01-verificar-ambiente, 02-configurar-ambiente,
+│                                               03-importar-creator-kit, 04-importar-agent-kit
+├── testes-manuais/  roteiros PowerShell usados para validar cada item antes de virar módulo
 ├── src/
 │   ├── main/        processo principal: lê manifestos, verifica pré-requisitos, roda o pwsh
 │   ├── preload/     ponte segura entre as telas e o processo principal
@@ -88,7 +94,11 @@ Regera `build/icon.png` (ícone do app e do instalador, fundo transparente) a pa
        "proposito": "Acessar o SharePoint"
      }]
      ```
-     Antes de existir um app no tenant, use `"clientId": "@azure-powershell"` (o mesmo app público da Microsoft que o PnP.PowerShell usa para registrar apps).
+     Antes de existir um app no tenant, use um app público da Microsoft:
+     - `"@azure-powershell"`: Microsoft Graph (o mesmo que o PnP.PowerShell usa para registrar apps);
+     - `"@power-platform-cli"`: Dataverse (o mesmo do `pac`), com `"tenant": "organizations"` e `"escopo": "{{EnvironmentUrl}}/.default"`.
+
+     Com `"tenant": "organizations"` a pessoa sempre escolhe a conta no login, porque o ambiente pode ser de outro cliente.
 3. Escreva os scripts seguindo o contrato abaixo.
 4. Rode `npm run validar`.
 
@@ -105,6 +115,7 @@ Connect-PnPOnline -Url $entrada.SiteUrl -AccessToken $token
 
 Write-BizappLog 'Fazendo algo...'                        # níveis: info, sucesso, aviso, erro, discreto
 Set-BizappSaida -Nome 'ClientId' -Valor $id              # preenche o campo de mesmo id e fica disponível no resumo
+Write-BizappProgresso -Percentual 42 -Fase 'Importando'  # mostra a barra de progresso na etapa (operações longas)
 ```
 
 - Sair com código 0 é sucesso; qualquer exceção não tratada marca a etapa como falha.
@@ -122,6 +133,7 @@ Set-BizappSaida -Nome 'ClientId' -Valor $id              # preenche o campo de m
 
 ## O que ainda falta
 
-- **Testar num tenant real** o novo login: registro do app via Microsoft Graph, consentimento na etapa "Validar permissões" e os scripts com `-AccessToken`.
+- **Testar pelo instalador o Copilot Agent Kit** num ambiente real. O procedimento foi validado manualmente com o PAC CLI (`testes-manuais/Teste-CopilotAgentKit.ps1`), mas o módulo usa o login do app e a Web API do Dataverse, que ainda não rodaram contra um ambiente.
+- **Token longo:** a importação do Copilot Agent Kit leva de 30 a 40 min, perto da validade de um token do Dataverse (60 a 90 min). Se ele expirar durante o acompanhamento, a etapa mostra o erro, mas a importação continua no ambiente; ao rodar de novo, a etapa reconhece a solução instalada.
 - **Assinatura de código.** Sem certificado, o Windows mostra o aviso do SmartScreen ao abrir o instalador.
 - **Atualização automática** (`electron-updater`) e a publicação dos instaladores.

@@ -17,6 +17,10 @@ export interface EstadoExecucao {
   resultado?: 'sucesso' | 'erro' | 'cancelado'
   /** Login mais recente desta execucao (o instalador pede antes de rodar o script). */
   login?: EstadoLogin
+  /** Ultimo progresso informado pelo script (Write-BizappProgresso). */
+  progresso?: { percentual: number; fase: string }
+  /** Momento em que a execucao comecou (para mostrar o tempo decorrido). */
+  inicio?: number
   execucaoId?: string
 }
 
@@ -55,6 +59,8 @@ export function useExecucoes(aoReceberSaida: (chave: string, nome: string, valor
         ? { estado: ev.estado, proposito: ev.proposito, url: ev.url, navegador: ev.navegador }
         : { estado: ev.estado, proposito: ev.proposito, conta: ev.conta }
       atualizar(chave, (e) => ({ ...e, login }))
+    } else if (ev.tipo === 'progresso') {
+      atualizar(chave, (e) => ({ ...e, progresso: { percentual: ev.percentual, fase: ev.fase } }))
     } else {
       const cancelada = canceladas.current.has(ev.execucaoId)
       atualizar(chave, (e) => ({ ...e, emAndamento: false, resultado: cancelada ? 'cancelado' : ev.sucesso ? 'sucesso' : 'erro' }))
@@ -67,7 +73,7 @@ export function useExecucoes(aoReceberSaida: (chave: string, nome: string, valor
   useEffect(() => api.onEventoExecucao(processar), [processar])
 
   const iniciar = useCallback(async (chave: string, disparar: () => Promise<string>, aoTerminar?: AoTerminar) => {
-    atualizar(chave, () => ({ linhas: [], emAndamento: true }))
+    atualizar(chave, () => ({ linhas: [], emAndamento: true, inicio: Date.now() }))
     try {
       const id = await disparar()
       chavePorId.current.set(id, chave)

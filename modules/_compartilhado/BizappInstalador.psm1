@@ -40,6 +40,12 @@ function Set-BizappSaida {
     Send-BizappEvento @{ tipo = 'saida'; nome = $Nome; valor = $Valor }
 }
 
+function Write-BizappProgresso {
+    <# Atualiza a barra de progresso da etapa (0 a 100) e o texto da fase atual. #>
+    param([Parameter(Mandatory)][double]$Percentual, [Parameter(Mandatory)][string]$Fase)
+    Send-BizappEvento @{ tipo = 'progresso'; percentual = [math]::Round($Percentual, 2); fase = $Fase }
+}
+
 function Assert-BizappEntrada {
     <# Falha cedo se algum campo obrigatorio nao veio preenchido. #>
     param([Parameter(Mandatory)][hashtable]$Entrada, [Parameter(Mandatory)][string[]]$Campos)
@@ -55,4 +61,4 @@ function Get-BizappToken {
     return $token
 }
 
-Export-ModuleMember -Function Read-BizappEntrada, Write-BizappLog, Set-BizappSaida, Assert-BizappEntrada, Get-BizappToken
+Export-ModuleMember -Function Read-BizappEntrada, Write-BizappLog, Write-BizappProgresso, Set-BizappSaida, Assert-BizappEntrada, Get-BizappToken

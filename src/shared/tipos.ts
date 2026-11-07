@@ -86,7 +86,10 @@ export interface ModuloManifesto {
   nome: string
   versao: string
   resumo: string
+  /** O que e e para que serve (aparece ao expandir o item no catalogo). */
   descricao: string
+  /** O que sera criado ou instalado no tenant, um item por linha. */
+  oQueInstala?: string[]
   tempoEstimadoMin?: number
   /** Papeis administrativos que quem instala precisa ter. */
   papeisNecessarios?: string[]
@@ -116,6 +119,8 @@ export type EventoExecucao =
   | { execucaoId: string; tipo: 'saida'; nome: string; valor: string }
   | { execucaoId: string; tipo: 'login'; estado: 'aguardando'; proposito: string; url: string; navegador: string }
   | { execucaoId: string; tipo: 'login'; estado: 'concluido'; proposito: string; conta?: string }
+  /** Progresso de uma operacao longa (ex.: importacao de solucao). percentual de 0 a 100. */
+  | { execucaoId: string; tipo: 'progresso'; percentual: number; fase: string }
   | { execucaoId: string; tipo: 'fim'; sucesso: boolean; codigo: number | null; saidas: Record<string, string> }
 
 export interface Navegador {
