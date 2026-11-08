@@ -61,4 +61,63 @@ function Get-BizappToken {
     return $token
 }
 
-Export-ModuleMember -Function Read-BizappEntrada, Write-BizappLog, Write-BizappProgresso, Set-BizappSaida, Assert-BizappEntrada, Get-BizappToken
+function Get-BizappIdentidade {
+    <#
+    Conta (upn), tenant (tid) e escopos (scp) gravados no proprio token de acesso.
+    Usado para validar o contexto antes de qualquer acao (guia de automacoes: "Validar contexto").
+    #>
+    param([Parameter(Mandatory)][string]$Token)
+    $parte = $Token.Split('.')[1].Replace('-', '+').Replace('_', '/')
+    $parte += '=' * ((4 - $parte.Length % 4) % 4)
+    $dados = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($parte)) | ConvertFrom-Json
+    return [pscustomobject]@{
+        Conta    = $(if ($dados.upn) { $dados.upn } elseif ($dados.preferred_username) { $dados.preferred_username } else { $dados.unique_name })
+        TenantId = $dados.tid
+        Escopos  = @("$($dados.scp)".Split(' ', [StringSplitOptions]::RemoveEmptyEntries))
+    }
+}
+
+function Assert-BizappContexto {
+    <#
+    Confere se o login atual e do mesmo tenant e da mesma conta confirmados na primeira etapa
+    do item. Divergencia = aborta antes de qualquer alteracao.
+    #>
+    param([Parameter(Mandatory)][string]$Token, [string]$TenantEsperado, [string]$ContaEsperada)
+    $id = Get-BizappIdentidade -Token $Token
+    if ($TenantEsperado -and $id.TenantId -ne $TenantEsperado) {
+        throw "Tenant diferente do confirmado na primeira etapa (esperado $TenantEsperado, conectado $($id.TenantId)). Nada foi alterado."
+    }
+    if ($ContaEsperada -and -not [string]::Equals($id.Conta, $ContaEsperada, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Conta diferente da confirmada na primeira etapa (esperada $ContaEsperada, conectada $($id.Conta)). Nada foi alterado."
+    }
+    return $id
+}
+
+function Get-BizappPastaEvidencias {
+    <# Pasta raiz das evidencias de um item: Documentos\Readiness Deploy Accelerator\evidencias\<Item>. #>
+    param([Parameter(Mandatory)][string]$Item)
+    return Join-Path ([Environment]::GetFolderPath('MyDocuments')) "Readiness Deploy Accelerator\evidencias\$Item"
+}
+
+function New-BizappEvidencias {
+    <#
+    Cria a pasta de evidencias desta execucao (<raiz do item>\<data-hora>-<acao>) e avisa o app
+    (saida PastaEvidencias, usada no botao "Abrir evidencias" do resumo).
+    #>
+    param([Parameter(Mandatory)][string]$Item, [Parameter(Mandatory)][string]$Acao)
+    $raiz = Get-BizappPastaEvidencias -Item $Item
+    $pasta = Join-Path $raiz "$(Get-Date -Format 'yyyyMMdd-HHmmss')-$Acao"
+    New-Item -ItemType Directory -Force -Path $pasta | Out-Null
+    Set-BizappSaida -Nome 'PastaEvidencias' -Valor $raiz
+    Write-BizappLog "Evidências desta execução: $pasta" -Nivel discreto
+    return $pasta
+}
+
+function Export-BizappEvidencia {
+    <# Grava um CSV na pasta de evidencias (mesmo formato dos scripts validados no laboratorio). #>
+    param([Parameter(Mandatory)][string]$Pasta, [Parameter(Mandatory)][string]$Nome, [Parameter(Mandatory)][AllowEmptyCollection()][object]$Dados)
+    @($Dados) | Export-Csv -LiteralPath (Join-Path $Pasta $Nome) -NoTypeInformation -Encoding utf8
+}
+
+Export-ModuleMember -Function Read-BizappEntrada, Write-BizappLog, Write-BizappProgresso, Set-BizappSaida, Assert-BizappEntrada, Get-BizappToken, `
+    Get-BizappIdentidade, Assert-BizappContexto, Get-BizappPastaEvidencias, New-BizappEvidencias, Export-BizappEvidencia

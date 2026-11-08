@@ -5,7 +5,7 @@
   "resumo": "Leva os makers para ambientes pessoais de Developer em vez do ambiente padrão.",
   "descricao": "Configuração do tenant do Power Platform: quando um maker abre o Power Apps, o Power Automate ou o Copilot Studio, ele cai no próprio ambiente de Developer (criado automaticamente na primeira vez), em vez do ambiente padrão. Isso evita que apps, fluxos e agentes de teste se acumulem no ambiente padrão, que é compartilhado por todos.",
   "oQueInstala": [
-    "Liga o Environment Routing no tenant (enableDefaultEnvironmentRouting)",
+    "Liga o Environment Routing no tenant",
     "Define se o roteamento vale só para makers novos ou também para os existentes",
     "Não cria regras de roteamento nem grupos de ambientes"
   ],
@@ -55,7 +55,7 @@
             {
               "valor": "novos",
               "rotulo": "Só makers novos",
-              "descricao": "Quem ainda não criou nada no Power Platform. É o comportamento do documento COE-IA-003."
+              "descricao": "Quem ainda não criou nada no Power Platform."
             },
             {
               "valor": "todos",

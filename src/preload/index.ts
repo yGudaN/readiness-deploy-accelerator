@@ -16,6 +16,11 @@ const api: ApiInstalador = {
     return () => ipcRenderer.removeListener('execucao:evento', ouvinte)
   },
   abrirArquivoDoModulo: (moduloId, caminho) => ipcRenderer.invoke('abrir:arquivo', moduloId, caminho),
+  abrirEvidencias: (caminho) => ipcRenderer.invoke('abrir:evidencias', caminho),
+  contaAtual: () => ipcRenderer.invoke('login:conta-atual'),
+  trocarConta: () => ipcRenderer.invoke('login:trocar'),
+  entrarComOutraConta: (moduloId, navegadorId) => ipcRenderer.invoke('login:entrar', moduloId, navegadorId),
+  cancelarLogin: () => ipcRenderer.invoke('login:cancelar'),
   abrirLink: (url, navegadorId) => ipcRenderer.invoke('abrir:link', url, navegadorId)
 }
 

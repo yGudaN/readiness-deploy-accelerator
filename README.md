@@ -20,20 +20,27 @@ Electron (telas em React)  ──IPC──▶  processo principal  ──spawn�
 ```
 ReadinessDeployAccelerator/
 ├── modules/
-│   ├── _compartilhado/BizappInstalador.psm1   funções que os scripts usam para falar com o app
+│   ├── _compartilhado/
+│   │   ├── BizappInstalador.psm1               funções que os scripts usam para falar com o app (log, saídas,
+│   │   │                                       progresso, tokens, contexto e pacote de evidências)
+│   │   └── BizappGraph.psm1                    Graph PowerShell conectado com o token do instalador
 │   ├── biblioteca-prompts/
 │   │   ├── module.json                         manifesto: etapas, campos, pré-requisitos, resumo
 │   │   ├── scripts/                            01-registrar-app, 02-validar-permissoes, 03-provisionar-listas, 04-criar-paginas
 │   │   └── assets/                             .sppkg da Biblioteca (atualizado com npm run sincronizar)
-│   └── copilot-agent-kit/
-│       ├── module.json
-│       └── scripts/                            Dataverse.psm1 (Web API + importação com progresso),
-│                                               01-verificar-ambiente, 02-configurar-ambiente,
+│   ├── copilot-agent-kit/
+│   │   ├── module.json
+│   │   └── scripts/                            Dataverse.psm1 (Web API + importação com progresso),
+│   │                                           01-verificar-ambiente, 02-configurar-ambiente,
 │   │                                           03-importar-creator-kit, 04-importar-agent-kit
-│   └── environment-routing/
+│   ├── environment-routing/
+│   │   ├── module.json
+│   │   └── scripts/                            ConfiguracoesTenant.psm1 (configurações do tenant),
+│   │                                           01-verificar-tenant, 02-ativar-roteamento
+│   └── grupos-copilot/                         AUTO-22
 │       ├── module.json
-│       └── scripts/                            ConfiguracoesTenant.psm1 (configurações do tenant),
-│                                               01-verificar-tenant, 02-ativar-roteamento
+│       └── scripts/                            GruposCopilot.psm1 (funções do script validado),
+│                                               01-consultar, 02-criar-grupos, 03-membros
 ├── testes-manuais/  roteiros PowerShell usados para validar cada item antes de virar módulo
 ├── PENDENCIAS.md    decisões em aberto com o time sobre os itens do catálogo
 ├── src/
@@ -122,6 +129,15 @@ Write-BizappLog 'Fazendo algo...'                        # níveis: info, sucess
 Set-BizappSaida -Nome 'ClientId' -Valor $id              # preenche o campo de mesmo id e fica disponível no resumo
 Write-BizappProgresso -Percentual 42 -Fase 'Importando'  # mostra a barra de progresso na etapa (operações longas)
 ```
+
+### Itens do guia de automações (AUTO-xx)
+
+Os itens que vêm dos scripts validados no laboratório seguem os padrões do guia:
+
+- **Consultar primeiro:** a primeira etapa só lê e grava `Conta` e `TenantId`. As etapas seguintes passam esses valores em `entradas` e chamam `Assert-BizappContexto` (ou `Connect-BizappGraph`), que aborta se o login for de outro tenant ou conta.
+- **Pacote de evidências:** cada execução chama `New-BizappEvidencias -Item <id> -Acao <ação>`, que cria `Documentos\Readiness Deploy Accelerator\evidencias\<id>\<data-hora>-<ação>`, e grava os CSVs com `Export-BizappEvidencia` (mesmos nomes do laboratório: `configuracao-antes.csv`, `acoes.csv`, `resumo.csv`...). O resumo final do app ganha o botão "Abrir evidências".
+- **Lógica preservada:** as funções do script validado vão para um `.psm1` do item sem mudar a lógica; o script original fica em `testes-manuais/originais/`.
+- **Um login por item:** todas as etapas pedem o mesmo token (mesmo cliente e mesmos escopos), então o login acontece uma vez e é reaproveitado.
 
 - Sair com código 0 é sucesso; qualquer exceção não tratada marca a etapa como falha.
 - `Write-Output` e `Write-Host` também aparecem no log; o que vai para stderr aparece como erro.

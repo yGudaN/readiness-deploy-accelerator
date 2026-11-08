@@ -14,7 +14,9 @@ const CLIENTES_CONHECIDOS: Record<string, string> = {
   // Mesmo app que o PnP.PowerShell usa para registrar apps (Microsoft Azure PowerShell)
   '@azure-powershell': '1950a258-227b-4e31-a9cf-717495945fc2',
   // App publico do Power Platform CLI (pac), feito para acessar o Dataverse
-  '@power-platform-cli': '9cee029c-6210-4654-90bb-17e6e9d36617'
+  '@power-platform-cli': '9cee029c-6210-4654-90bb-17e6e9d36617',
+  // Microsoft Graph Command Line Tools: o mesmo do Connect-MgGraph usado nos scripts validados
+  '@graph-cli': '14d82eec-204b-4c2f-b7e8-296a70dab67e'
 }
 
 /** Tenants genericos: a conta e escolhida no login, entao nao ha "ultima conta" para sugerir. */
@@ -45,12 +47,34 @@ export interface ContextoLogin {
 interface Sessao {
   refreshToken: string
   conta?: string
+  tenantId?: string
+  clientId: string
+  obtidoEm: number
 }
 
-const tokens = new Map<string, { valor: string; expiraEm: number }>()
+export interface ContaAtiva {
+  conta: string
+  tenantId: string
+}
+
+const tokens = new Map<string, { valor: string; expiraEm: number; obtidoEm: number }>()
 const sessoes = new Map<string, Sessao>()
 /** Ultima conta usada em cada tenant: evita escolher a conta de novo no proximo login. */
 const contaPorTenant = new Map<string, string>()
+/** Conta do ultimo login: os proximos itens a reaproveitam ("manter a mesma conta"). */
+let contaAtiva: ContaAtiva | null = null
+/** Logins e tokens obtidos antes deste momento sao ignorados ("trocar de conta"). */
+let marco = 0
+
+export function contaAtual(): ContaAtiva | null {
+  return contaAtiva
+}
+
+/** Esquece a conta atual: o proximo login pede para escolher a conta, sem reaproveitar nada. */
+export function trocarConta(): void {
+  marco = Date.now()
+  contaAtiva = null
+}
 
 const base64url = (b: Buffer): string => b.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 
@@ -64,13 +88,13 @@ function validar(p: PedidoToken): void {
   if (!ESCOPO.test(p.escopo)) throw new Error(`Escopo inválido: "${p.escopo}".`)
 }
 
-function contaDoIdToken(idToken?: string): string | undefined {
-  if (!idToken) return undefined
+function identidadeDoIdToken(idToken?: string): { conta?: string; tenantId?: string } {
+  if (!idToken) return {}
   try {
     const payload = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString('utf8'))
-    return payload.preferred_username ?? payload.upn ?? payload.email
+    return { conta: payload.preferred_username ?? payload.upn ?? payload.email, tenantId: payload.tid }
   } catch {
-    return undefined
+    return {}
   }
 }
 
@@ -113,12 +137,27 @@ async function chamarToken(tenant: string, corpo: Record<string, string>): Promi
   return json
 }
 
-function guardar(chaveSessao: string, chaveToken: string, r: RespostaToken, tenant: string): string | undefined {
-  tokens.set(chaveToken, { valor: r.access_token, expiraEm: Date.now() + (r.expires_in - 300) * 1000 })
-  const conta = contaDoIdToken(r.id_token) ?? sessoes.get(chaveSessao)?.conta
-  if (r.refresh_token) sessoes.set(chaveSessao, { refreshToken: r.refresh_token, conta })
-  if (conta) contaPorTenant.set(tenant.toLowerCase(), conta)
+function guardar(chaveSessao: string, chaveToken: string, r: RespostaToken, p: PedidoToken): string | undefined {
+  const agora = Date.now()
+  tokens.set(chaveToken, { valor: r.access_token, expiraEm: agora + (r.expires_in - 300) * 1000, obtidoEm: agora })
+  const id = identidadeDoIdToken(r.id_token)
+  const anterior = sessoes.get(chaveSessao)
+  const conta = id.conta ?? anterior?.conta
+  const tenantId = id.tenantId ?? anterior?.tenantId
+  if (r.refresh_token) sessoes.set(chaveSessao, { refreshToken: r.refresh_token, conta, tenantId, clientId: p.clientId, obtidoEm: agora })
+  if (conta) contaPorTenant.set(p.tenant.toLowerCase(), conta)
+  if (conta && tenantId) contaAtiva = { conta, tenantId }
   return conta
+}
+
+/** Sugestao de conta para o login: a ultima usada neste tenant ou, sem ela, a conta ativa. */
+function contaSugerida(p: PedidoToken): string | undefined {
+  const tenant = p.tenant.toLowerCase()
+  if (TENANTS_GENERICOS.has(tenant)) return contaAtiva?.conta
+  const doTenant = contaPorTenant.get(tenant)
+  if (doTenant) return doTenant
+  // Tenant informado pelo dominio (ex.: empresa.onmicrosoft.com): so sugere se a conta for desse dominio
+  return contaAtiva && contaAtiva.conta.toLowerCase().endsWith(`@${tenant}`) ? contaAtiva.conta : undefined
 }
 
 const PAGINA_RETORNO = (titulo: string, texto: string): string => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Readiness Deploy Accelerator</title>
@@ -170,10 +209,12 @@ async function loginInterativo(p: PedidoToken, ctx: ContextoLogin): Promise<Resp
   const retorno = await iniciarRetorno(estado)
   const redirectUri = `http://localhost:${retorno.porta}`
   const escopo = `${p.escopo} offline_access openid profile`
-  // Em tenant generico a conta pode ser de outro cliente: sempre deixa a pessoa escolher
-  const conta = TENANTS_GENERICOS.has(p.tenant.toLowerCase()) ? undefined : contaPorTenant.get(p.tenant.toLowerCase())
+  // Com uma conta ativa, o navegador ja recebe a sugestao e costuma concluir sozinho;
+  // sem ela (inicio ou "trocar de conta"), a pessoa escolhe a conta.
+  const conta = contaSugerida(p)
+  const autoridade = TENANTS_GENERICOS.has(p.tenant.toLowerCase()) && conta && contaAtiva ? contaAtiva.tenantId : p.tenant
 
-  const url = new URL(`https://login.microsoftonline.com/${p.tenant}/oauth2/v2.0/authorize`)
+  const url = new URL(`https://login.microsoftonline.com/${autoridade}/oauth2/v2.0/authorize`)
   url.search = new URLSearchParams({
     client_id: p.clientId,
     response_type: 'code',
@@ -199,7 +240,7 @@ async function loginInterativo(p: PedidoToken, ctx: ContextoLogin): Promise<Resp
     if (!params.has('code')) {
       throw new Error(mensagemDeErro(params.get('error') ?? 'erro', params.get('error_description') ?? ''))
     }
-    return await chamarToken(p.tenant, {
+    return await chamarToken(autoridade, {
       client_id: p.clientId,
       grant_type: 'authorization_code',
       code: params.get('code')!,
@@ -220,28 +261,55 @@ export async function obterToken(pedido: PedidoToken, ctx: ContextoLogin): Promi
   const chaveToken = `${chaveSessao}|${p.escopo}`
 
   const emCache = tokens.get(chaveToken)
-  if (emCache && emCache.expiraEm > Date.now()) return emCache.valor
+  if (emCache && emCache.expiraEm > Date.now() && emCache.obtidoEm >= marco) return emCache.valor
 
-  const sessao = sessoes.get(chaveSessao)
-  if (sessao) {
+  const escopo = `${p.escopo} offline_access openid profile`
+  const renovar = async (s: Sessao, autoridade: string): Promise<RespostaToken | null> => {
     try {
-      const r = await chamarToken(p.tenant, {
-        client_id: p.clientId,
-        grant_type: 'refresh_token',
-        refresh_token: sessao.refreshToken,
-        scope: `${p.escopo} offline_access openid profile`
-      })
-      const conta = guardar(chaveSessao, chaveToken, r, p.tenant)
-      ctx.log('discreto', `Login reaproveitado${conta ? ` (${conta})` : ''}.`)
-      return r.access_token
+      return await chamarToken(autoridade, { client_id: p.clientId, grant_type: 'refresh_token', refresh_token: s.refreshToken, scope: escopo })
     } catch {
-      // Refresh recusado (ex.: falta consentimento para o novo escopo): segue para o login
+      return null // recusado (ex.: falta consentimento para o novo escopo)
     }
   }
 
+  // 1) Mesmo app: renova com o login que ja existe
+  const sessao = sessoes.get(chaveSessao)
+  if (sessao && sessao.obtidoEm >= marco) {
+    const r = await renovar(sessao, p.tenant)
+    if (r) {
+      const conta = guardar(chaveSessao, chaveToken, r, p)
+      ctx.log('discreto', `Login reaproveitado${conta ? ` (${conta})` : ''}.`)
+      return r.access_token
+    }
+  }
+
+  // 2) Outro app da Microsoft com a mesma conta: alguns apps publicos da Microsoft aceitam o
+  //    login uns dos outros. Se o Entra ID recusar, segue para o login no navegador.
+  if (contaAtiva) {
+    const generico = TENANTS_GENERICOS.has(p.tenant.toLowerCase())
+    const candidatas = [...sessoes.values()].filter((s) =>
+      s.clientId !== p.clientId && s.obtidoEm >= marco && s.conta === contaAtiva!.conta && s.tenantId === contaAtiva!.tenantId)
+    for (const s of candidatas) {
+      const r = await renovar(s, generico ? s.tenantId! : p.tenant)
+      if (r) {
+        const conta = guardar(chaveSessao, chaveToken, r, p)
+        ctx.log('discreto', `Login reaproveitado de outro item${conta ? ` (${conta})` : ''}.`)
+        return r.access_token
+      }
+    }
+  }
+
+  // 3) Login no navegador (com a conta ativa ja sugerida, quando houver)
   const r = await loginInterativo(p, ctx)
-  const conta = guardar(chaveSessao, chaveToken, r, p.tenant)
+  const conta = guardar(chaveSessao, chaveToken, r, p)
   ctx.aoConcluir(conta)
   ctx.log('sucesso', `Login concluído${conta ? ` como ${conta}` : ''}.`)
   return r.access_token
+}
+
+/** Troca de conta e ja faz o login novo (botao "Fazer login" da tela entre itens). */
+export async function entrarComOutraConta(pedido: PedidoToken, ctx: ContextoLogin): Promise<ContaAtiva | null> {
+  trocarConta()
+  await obterToken(pedido, ctx)
+  return contaAtiva
 }

@@ -140,6 +140,11 @@ export interface Navegador {
   nome: string
 }
 
+export interface ContaLogin {
+  conta: string
+  tenantId: string
+}
+
 export interface ApiInstalador {
   versaoApp(): Promise<string>
   listarModulos(): Promise<ModuloManifesto[]>
@@ -154,5 +159,17 @@ export interface ApiInstalador {
   reabrirLogin(execucaoId: string, navegadorId: string): Promise<void>
   onEventoExecucao(callback: (evento: EventoExecucao) => void): () => void
   abrirArquivoDoModulo(moduloId: string, caminho: string): Promise<void>
+  /** Abre no Explorer uma pasta de evidencias gravada pelos scripts (saida PastaEvidencias). */
+  abrirEvidencias(caminho: string): Promise<void>
+  /** Conta do ultimo login (reaproveitada pelos proximos itens), ou null. */
+  contaAtual(): Promise<ContaLogin | null>
+  /** Esquece a conta atual: o proximo login pede para escolher a conta. */
+  trocarConta(): Promise<void>
+  /**
+   * Troca de conta e ja faz o login do item no navegador informado. pendente = true quando o
+   * login depende de dados da primeira etapa e vai acontecer nela.
+   */
+  entrarComOutraConta(moduloId: string, navegadorId: string): Promise<{ pendente: boolean; conta?: ContaLogin | null }>
+  cancelarLogin(): Promise<void>
   abrirLink(url: string, navegadorId: string): Promise<void>
 }

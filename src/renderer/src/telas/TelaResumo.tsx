@@ -42,6 +42,7 @@ export function TelaResumo({ modulos, valores }: Props) {
 
       {modulos.map((m) => {
         const { itens, links } = itensDoModulo(m, valores[m.id] ?? {})
+        const evidencias = valores[m.id]?.PastaEvidencias
         return (
           <section key={m.id} className="cartao resumo-modulo">
             <h3>{m.nome}</h3>
@@ -53,13 +54,18 @@ export function TelaResumo({ modulos, valores }: Props) {
                 </div>
               ))}
             </dl>
-            {links.length > 0 && (
+            {(links.length > 0 || evidencias) && (
               <div className="linha-botoes" style={{ marginBottom: 0 }}>
                 {links.map((l) => (
                   <button key={l.url} className="botao botao--secundario botao--pequeno" onClick={() => void api.abrirLink(l.url, navegador)}>
                     {l.rotulo}
                   </button>
                 ))}
+                {evidencias && (
+                  <button className="botao botao--secundario botao--pequeno" onClick={() => void api.abrirEvidencias(evidencias)}>
+                    Abrir evidências
+                  </button>
+                )}
               </div>
             )}
           </section>

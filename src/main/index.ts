@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron'
-import { join } from 'node:path'
+import { join, resolve, sep } from 'node:path'
 import { aplicarModelo } from '../shared/modelo'
 import type { EventoExecucao, TokenDef } from '../shared/tipos'
-import { obterToken } from './autenticacao'
+import { contaAtual, entrarComOutraConta, obterToken, trocarConta } from './autenticacao'
 import { caminhoNoModulo, listarModulos, obterModulo } from './modulos'
 import { abrirNoNavegador, listarNavegadores } from './navegadores'
 import { cancelarExecucao, cancelarTodas, iniciarExecucao, type Preparacao } from './powershell'
@@ -82,7 +82,45 @@ function prepararTokens(defs: TokenDef[], valores: Record<string, string>, naveg
   }
 }
 
+/** Login feito na tela entre itens (fora de uma execucao); um por vez, cancelavel. */
+let loginAvulso: AbortController | null = null
+
+function registrarIpcLogin(): void {
+  ipcMain.handle('login:conta-atual', () => contaAtual())
+  ipcMain.handle('login:trocar', () => trocarConta())
+  ipcMain.handle('login:cancelar', () => loginAvulso?.abort())
+
+  // Troca de conta e ja faz o login do item. Usa o primeiro login declarado nas etapas do item;
+  // se ele depender de dados que a pessoa ainda vai preencher (ex.: {{Tenant}}), so troca a conta
+  // e o login acontece na primeira etapa.
+  ipcMain.handle('login:entrar', async (_e, moduloId: string, navegadorId: string) => {
+    const def = obterModulo(moduloId).etapas.flatMap((e) => e.script?.tokens ?? [])[0]
+    const pedido = def && {
+      tenant: aplicarModelo(def.tenant, {}),
+      clientId: aplicarModelo(def.clientId, {}),
+      escopo: aplicarModelo(def.escopo, {}),
+      proposito: def.proposito
+    }
+    if (!pedido || [def.tenant, def.clientId, def.escopo].some((t) => /\{\{/.test(t))) {
+      trocarConta()
+      return { pendente: true }
+    }
+    loginAvulso?.abort()
+    loginAvulso = new AbortController()
+    const conta = await entrarComOutraConta(pedido, {
+      navegadorId,
+      sinal: loginAvulso.signal,
+      log: () => undefined,
+      abrirNoNavegador,
+      aoAguardar: () => undefined,
+      aoConcluir: () => undefined
+    })
+    return { pendente: false, conta }
+  })
+}
+
 function registrarIpc(): void {
+  registrarIpcLogin()
   ipcMain.handle('app:versao', () => app.getVersion())
   ipcMain.handle('modulos:listar', () => listarModulos())
   ipcMain.handle('prerequisitos:verificar', () => verificarPreRequisitos(listarModulos()))
@@ -127,6 +165,15 @@ function registrarIpc(): void {
 
   ipcMain.handle('abrir:arquivo', (_e, moduloId: string, caminho: string) => {
     shell.showItemInFolder(caminhoNoModulo(moduloId, caminho))
+  })
+
+  // So abre pastas dentro de Documentos\Readiness Deploy Accelerator\evidencias (gravadas pelos scripts)
+  ipcMain.handle('abrir:evidencias', async (_e, caminho: string) => {
+    const raiz = resolve(app.getPath('documents'), 'Readiness Deploy Accelerator', 'evidencias')
+    const alvo = resolve(caminho)
+    if (!alvo.toLowerCase().startsWith(raiz.toLowerCase() + sep)) throw new Error('Pasta fora da área de evidências.')
+    const erro = await shell.openPath(alvo)
+    if (erro) throw new Error(erro)
   })
 
   ipcMain.handle('abrir:link', async (_e, url: string, navegadorId: string) => {

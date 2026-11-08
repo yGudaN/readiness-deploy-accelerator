@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { aplicarModelo } from '@shared/modelo'
-import type { CampoDef, EtapaDef, ModuloManifesto, Navegador, StatusPreRequisito } from '@shared/tipos'
+import type { CampoDef, ContaLogin, EtapaDef, ModuloManifesto, Navegador, StatusPreRequisito } from '@shared/tipos'
 import { api, emSimulador } from './api'
 import { Seletor } from './componentes/Seletor'
 import { lerNavegadorPreferido, NavegadorContexto, salvarNavegadorPreferido } from './navegador'
 import { TelaCatalogo } from './telas/TelaCatalogo'
+import { TelaConta, type EscolhaConta, type EstadoLoginConta } from './telas/TelaConta'
 import { TelaEtapa } from './telas/TelaEtapa'
 import { TelaPreRequisitos } from './telas/TelaPreRequisitos'
 import { TelaResumo } from './telas/TelaResumo'
@@ -14,6 +15,8 @@ import { assinaturaEntradas, validarCampo, valoresLimpos } from './validacao'
 type Passo =
   | { tipo: 'prerequisitos' }
   | { tipo: 'catalogo' }
+  /** Antes de um item: manter a conta do login anterior ou trocar. */
+  | { tipo: 'conta'; modulo: ModuloManifesto }
   | { tipo: 'etapa'; modulo: ModuloManifesto; etapa: EtapaDef }
   | { tipo: 'resumo' }
 
@@ -36,6 +39,14 @@ export function App() {
   const [instalados, setInstalados] = useState<string[]>([])
   const [navegadores, setNavegadores] = useState<Navegador[]>([])
   const [navegador, setNavegador] = useState(lerNavegadorPreferido)
+  // Conta entre itens
+  const [contaAtual, setContaAtual] = useState<ContaLogin | null>(null)
+  /** Conta no momento em que a pessoa saiu do catalogo: decide se o 1o item tambem pergunta. */
+  const [contaNoInicio, setContaNoInicio] = useState<ContaLogin | null>(null)
+  const [naoPerguntarConta, setNaoPerguntarConta] = useState(false)
+  const [contasVisitadas, setContasVisitadas] = useState<string[]>([])
+  const [escolhaConta, setEscolhaConta] = useState<Record<string, EscolhaConta>>({})
+  const [loginConta, setLoginConta] = useState<Record<string, EstadoLoginConta>>({})
 
   const escolherNavegador = (id: string): void => {
     setNavegador(id)
@@ -72,14 +83,33 @@ export function App() {
     void verificar()
   }, [verificar])
 
+  // A conta do ultimo login muda depois de cada execucao
+  useEffect(() => {
+    if (!algumaEmAndamento) void api.contaAtual().then(setContaAtual)
+  }, [algumaEmAndamento])
+
   const passos = useMemo<Passo[]>(() => {
-    const etapas = modulos
-      .filter((m) => selecionados.includes(m.id))
-      .flatMap((modulo) => modulo.etapas.map((etapa): Passo => ({ tipo: 'etapa', modulo, etapa })))
+    const escolhidos = modulos.filter((m) => selecionados.includes(m.id))
+    const etapas = escolhidos.flatMap((modulo, i): Passo[] => {
+      const usaLogin = modulo.etapas.some((e) => e.script?.tokens?.length)
+      // Pergunta a partir do 2o item (ou ja no 1o, se a sessao tem uma conta conectada).
+      // "Nao perguntar novamente" so esconde as telas que a pessoa ainda nao viu.
+      const perguntar = usaLogin && (i > 0 || !!contaNoInicio) && (!naoPerguntarConta || contasVisitadas.includes(modulo.id))
+      return [
+        ...(perguntar ? [{ tipo: 'conta', modulo } as Passo] : []),
+        ...modulo.etapas.map((etapa): Passo => ({ tipo: 'etapa', modulo, etapa }))
+      ]
+    })
     return [{ tipo: 'prerequisitos' }, { tipo: 'catalogo' }, ...etapas, { tipo: 'resumo' }]
-  }, [modulos, selecionados])
+  }, [modulos, selecionados, contaNoInicio, naoPerguntarConta, contasVisitadas])
 
   const passo = passos[Math.min(indice, passos.length - 1)]
+
+  useEffect(() => {
+    if (passo.tipo === 'conta' && !contasVisitadas.includes(passo.modulo.id)) {
+      setContasVisitadas((v) => [...v, passo.modulo.id])
+    }
+  }, [passo, contasVisitadas])
 
   // Ao entrar numa etapa, preenche os valores padrao dos campos ainda nao tocados
   useEffect(() => {
@@ -120,6 +150,7 @@ export function App() {
       const comPendencia = modulos.filter((m) => selecionados.includes(m.id) && pendenciasPorModulo[m.id]?.length)
       return comPendencia.length ? `Resolva os pré-requisitos de: ${comPendencia.map((m) => m.nome).join(', ')}.` : null
     }
+    if (passo.tipo === 'conta' && loginConta[passo.modulo.id]?.estado === 'aguardando') return 'Conclua o login ou cancele.'
     if (passo.tipo === 'etapa') {
       const { modulo, etapa } = passo
       const v = valores[modulo.id] ?? {}
@@ -135,6 +166,26 @@ export function App() {
   const irPara = (novo: number): void => {
     setIndice(novo)
     setMaxAlcancado((m) => Math.max(m, novo))
+  }
+
+  const avancar = (): void => {
+    if (passo.tipo === 'catalogo') setContaNoInicio(contaAtual)
+    // Escolheu trocar e nao fez o login aqui: o proximo login do item pede para escolher a conta
+    if (passo.tipo === 'conta' && (escolhaConta[passo.modulo.id] ?? 'manter') === 'trocar' && !loginConta[passo.modulo.id]) {
+      void api.trocarConta().then(() => setContaAtual(null))
+    }
+    irPara(indice + 1)
+  }
+
+  const entrarComOutraConta = (moduloId: string): void => {
+    setLoginConta((l) => ({ ...l, [moduloId]: { estado: 'aguardando' } }))
+    api.entrarComOutraConta(moduloId, navegador).then(
+      (r) => {
+        setLoginConta((l) => ({ ...l, [moduloId]: r.pendente ? { estado: 'pendente' } : { estado: 'ok', conta: r.conta?.conta } }))
+        void api.contaAtual().then(setContaAtual)
+      },
+      (erro: Error) => setLoginConta((l) => ({ ...l, [moduloId]: { estado: 'erro', erro: erro.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') } }))
+    )
   }
 
   const alternarModulo = (id: string): void => {
@@ -168,6 +219,9 @@ export function App() {
     setSucessos(semPrefixos)
     setConfirmacoes(semPrefixos)
     prefixos.forEach(limpar)
+    setContasVisitadas([])
+    setEscolhaConta({})
+    setLoginConta({})
     setSelecionados([])
     setIndice(1)
     setMaxAlcancado(1)
@@ -199,6 +253,27 @@ export function App() {
             onAlternar={alternarModulo}
           />
         )
+      case 'conta': {
+        const id = passo.modulo.id
+        return (
+          <TelaConta
+            key={`conta-${id}`}
+            modulo={passo.modulo}
+            conta={contaAtual}
+            escolha={escolhaConta[id] ?? 'manter'}
+            naoPerguntar={naoPerguntarConta}
+            login={loginConta[id]}
+            onEscolha={(e) => {
+              setEscolhaConta((s) => ({ ...s, [id]: e }))
+              if (e === 'manter') setLoginConta(({ [id]: _, ...resto }) => resto)
+            }}
+            onNaoPerguntar={setNaoPerguntarConta}
+            onEscolherNavegador={escolherNavegador}
+            onEntrar={() => entrarComOutraConta(id)}
+            onCancelarLogin={() => void api.cancelarLogin()}
+          />
+        )
+      }
       case 'etapa': {
         const { modulo, etapa } = passo
         const chave = chaveEtapa(modulo.id, etapa.id)
@@ -259,10 +334,12 @@ export function App() {
             if (p.tipo === 'prerequisitos') return itemLateral(p, i, 'Pré-requisitos')
             if (p.tipo === 'catalogo') return itemLateral(p, i, 'Catálogo')
             if (p.tipo === 'resumo') return itemLateral(p, i, 'Resumo')
-            const primeiraDoModulo = p.modulo.etapas[0].id === p.etapa.id
+            // Titulo do item antes do seu primeiro passo (a tela de conta ou a primeira etapa)
+            const anterior = passos[i - 1]
+            const primeiroDoModulo = !('modulo' in anterior) || anterior.modulo.id !== p.modulo.id
             return [
-              primeiraDoModulo && <li key={`t-${p.modulo.id}`} className="lateral__titulo">{p.modulo.nome}</li>,
-              itemLateral(p, i, p.etapa.titulo, true)
+              primeiroDoModulo && <li key={`t-${p.modulo.id}`} className="lateral__titulo">{p.modulo.nome}</li>,
+              itemLateral(p, i, p.tipo === 'conta' ? 'Conta' : p.etapa.titulo, true)
             ]
           })}
         </ol>
@@ -299,7 +376,7 @@ export function App() {
               Concluir
             </button>
           ) : (
-            <button className="botao botao--primario" disabled={!!bloqueio} onClick={() => irPara(indice + 1)}>
+            <button className="botao botao--primario" disabled={!!bloqueio} onClick={avancar}>
               Avançar
             </button>
           )}

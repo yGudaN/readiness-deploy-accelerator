@@ -383,6 +383,16 @@ button, input { font: inherit; letter-spacing: inherit; }
 .confirmacao { display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px; cursor: pointer; margin-top: 20px; }
 .confirmacao input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--biz-purple); }
 
+/* Tela "Qual conta usar?" entre itens */
+.trocar-conta { margin-top: 14px; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+.trocar-conta__linha { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.trocar-conta__estado { display: flex; align-items: center; gap: 10px; color: var(--biz-cinza); font-size: 13px; }
+.trocar-conta__estado--ok { color: var(--biz-purple); font-weight: 600; }
+.trocar-conta__estado--erro { color: var(--biz-black); font-weight: 600; }
+.confirmacao-simples { display: flex; align-items: center; gap: 10px; margin-top: 22px; color: var(--biz-cinza); cursor: pointer; }
+.confirmacao-simples input { width: 17px; height: 17px; accent-color: var(--biz-purple); }
+.visualmente-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 /* ---------- Execucao ---------- */
 .execucao { margin-top: 28px; }
 .execucao__cabecalho { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

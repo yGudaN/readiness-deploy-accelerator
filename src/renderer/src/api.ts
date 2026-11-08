@@ -10,6 +10,7 @@ function criarSimulador(): ApiInstalador {
   const emitir = (e: EventoExecucao): void => ouvintes.forEach((o) => o(e))
   const espera = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
   let pnpInstalado = false
+  let conta: { conta: string; tenantId: string } | null = null
 
   const simular = (saidas: Record<string, string>, login?: { proposito: string; navegador: string }, comProgresso = false): string => {
     const execucaoId = crypto.randomUUID()
@@ -19,7 +20,8 @@ function criarSimulador(): ApiInstalador {
         emitir({ execucaoId, tipo: 'login', estado: 'aguardando', proposito: login.proposito, url: 'https://login.microsoftonline.com/simulador', navegador: login.navegador })
         emitir({ execucaoId, tipo: 'log', nivel: 'discreto', mensagem: `Login: ${login.proposito}. A página de login foi aberta no navegador.` })
         await espera(2500)
-        emitir({ execucaoId, tipo: 'login', estado: 'concluido', proposito: login.proposito, conta: 'admin@contoso.onmicrosoft.com' })
+        conta = conta ?? { conta: 'admin@contoso.onmicrosoft.com', tenantId: '00000000-0000-4000-8000-0000000000bb' }
+        emitir({ execucaoId, tipo: 'login', estado: 'concluido', proposito: login.proposito, conta: conta.conta })
         emitir({ execucaoId, tipo: 'log', nivel: 'sucesso', mensagem: 'Login concluído como admin@contoso.onmicrosoft.com.' })
       }
       const passos = ['Conectando...', 'Conectado.', 'Executando etapa simulada...', 'Concluido.']
@@ -75,6 +77,14 @@ function criarSimulador(): ApiInstalador {
           EstadoAtual: 'Ligado, para makers novos e existentes',
           QuemRotear: 'todos'
         },
+        consultar: {
+          Conta: 'admin@contoso.onmicrosoft.com',
+          TenantId: '00000000-0000-4000-8000-0000000000bb',
+          EstadoCopilotPremium: 'Não existe',
+          EstadoCopilotGeral: 'Não existe',
+          PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Grupos-Copilot'
+        },
+        criar: { EstadoCopilotPremium: 'Existe (0 membro(s), 1 owner(s))', EstadoCopilotGeral: 'Existe (0 membro(s), 1 owner(s))' },
         ativar: { RoteamentoDepois: valores.QuemRotear === 'todos' ? 'Ligado, para makers novos e existentes' : 'Ligado, só para makers novos' }
       }
       return simular(
@@ -94,6 +104,15 @@ function criarSimulador(): ApiInstalador {
       return () => ouvintes.delete(callback)
     },
     abrirArquivoDoModulo: async (_m, caminho) => console.info('[simulador] abrir arquivo', caminho),
+    abrirEvidencias: async (caminho) => console.info('[simulador] abrir evidencias', caminho),
+    contaAtual: async () => conta,
+    trocarConta: async () => { conta = null },
+    entrarComOutraConta: async () => {
+      await espera(2000)
+      conta = { conta: 'outra.conta@fabrikam.onmicrosoft.com', tenantId: '00000000-0000-4000-8000-0000000000cc' }
+      return { pendente: false, conta }
+    },
+    cancelarLogin: async () => undefined,
     abrirLink: async (url) => void window.open(url, '_blank')
   }
 }

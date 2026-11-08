@@ -1,0 +1,199 @@
+{
+  "id": "grupos-copilot",
+  "nome": "Grupos Copilot-Premium e Copilot-Geral",
+  "versao": "1.0.0",
+  "resumo": "Cria os dois grupos de segurança que segmentam os usuários do Copilot.",
+  "descricao": "Cria e administra no Entra ID os grupos Copilot-Premium e Copilot-Geral, usados por outros itens do catálogo (por exemplo, a política de MFA para o Copilot) para aplicar regras diferentes a cada perfil de usuário. Começa sempre consultando o tenant, não duplica grupos e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Dois grupos de segurança no Entra ID (sem e-mail), com a conta administrativa como owner",
+    "Opcional: inclusão ou remoção de um usuário nos grupos",
+    "Não atribui licenças e não exclui grupos"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador Global ou Administrador de Grupos"
+  ],
+  "preRequisitos": [
+    {
+      "tipo": "pwsh",
+      "versaoMinima": "7.4"
+    },
+    {
+      "tipo": "modulo-ps",
+      "nome": "Microsoft.Graph.Authentication",
+      "versaoMinima": "2.41.2",
+      "instalavel": true
+    },
+    {
+      "tipo": "modulo-ps",
+      "nome": "Microsoft.Graph.Users",
+      "versaoMinima": "2.41.2",
+      "instalavel": true
+    },
+    {
+      "tipo": "modulo-ps",
+      "nome": "Microsoft.Graph.Groups",
+      "versaoMinima": "2.41.2",
+      "instalavel": true
+    },
+    {
+      "tipo": "modulo-ps",
+      "nome": "Microsoft.Graph.Identity.DirectoryManagement",
+      "versaoMinima": "2.41.2",
+      "instalavel": true
+    },
+    {
+      "tipo": "modulo-ps",
+      "nome": "Microsoft.Graph.Identity.Governance",
+      "versaoMinima": "2.41.2",
+      "instalavel": true
+    }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o tenant",
+      "descricao": "Somente leitura: confere a conta, a função administrativa, as licenças e se os grupos já existem. Nada é alterado. A conta e o tenant confirmados aqui são exigidos nas próximas etapas.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Group.ReadWrite.All https://graph.microsoft.com/GroupMember.ReadWrite.All",
+            "proposito": "Consultar e administrar os grupos no Entra ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": "criar",
+      "titulo": "Criar os grupos",
+      "descricao": "Cria os grupos que ainda não existem, como grupos de segurança sem e-mail e com a conta administrativa como owner. Grupo que já existe é mantido (não duplica). Se houver mais de um grupo com o mesmo nome, nada é alterado.",
+      "aviso": "Hoje: Copilot-Premium · {{EstadoCopilotPremium}} | Copilot-Geral · {{EstadoCopilotGeral}}",
+      "campos": [
+        {
+          "id": "GrupoAlvo",
+          "rotulo": "Grupos",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "Ambos",
+          "opcoes": [
+            {
+              "valor": "Ambos",
+              "rotulo": "Copilot-Premium e Copilot-Geral"
+            },
+            {
+              "valor": "Copilot-Premium",
+              "rotulo": "Só Copilot-Premium"
+            },
+            {
+              "valor": "Copilot-Geral",
+              "rotulo": "Só Copilot-Geral"
+            }
+          ]
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-criar-grupos.ps1",
+        "rotuloBotao": "Criar os grupos",
+        "obrigatorio": true,
+        "entradas": [
+          "TenantId",
+          "Conta",
+          "GrupoAlvo"
+        ],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Group.ReadWrite.All https://graph.microsoft.com/GroupMember.ReadWrite.All",
+            "proposito": "Consultar e administrar os grupos no Entra ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": "membros",
+      "titulo": "Incluir ou remover um usuário (opcional)",
+      "descricao": "Para testar ou já incluir alguém nos grupos escolhidos na etapa anterior. Atenção: se os grupos já tiverem políticas ou licenças vinculadas, o usuário passa a recebê-las. Pode pular esta etapa.",
+      "campos": [
+        {
+          "id": "UsuarioUPN",
+          "rotulo": "Usuário (e-mail de login)",
+          "tipo": "texto",
+          "placeholder": "usuario@empresa.com",
+          "padraoRegex": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "mensagemRegex": "Informe o e-mail de login do usuário."
+        },
+        {
+          "id": "OperacaoMembro",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "adicionar",
+          "opcoes": [
+            {
+              "valor": "adicionar",
+              "rotulo": "Incluir nos grupos"
+            },
+            {
+              "valor": "remover",
+              "rotulo": "Remover dos grupos"
+            }
+          ]
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-membros.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": [
+          "TenantId",
+          "Conta",
+          "GrupoAlvo",
+          "UsuarioUPN",
+          "OperacaoMembro"
+        ],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Group.ReadWrite.All https://graph.microsoft.com/GroupMember.ReadWrite.All",
+            "proposito": "Consultar e administrar os grupos no Entra ID"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      {
+        "rotulo": "Conta",
+        "valor": "{{Conta}}"
+      },
+      {
+        "rotulo": "Tenant",
+        "valor": "{{TenantId}}"
+      },
+      {
+        "rotulo": "Copilot-Premium",
+        "valor": "{{EstadoCopilotPremium}}"
+      },
+      {
+        "rotulo": "Copilot-Geral",
+        "valor": "{{EstadoCopilotGeral}}"
+      },
+      {
+        "rotulo": "Evidências",
+        "valor": "{{PastaEvidencias}}"
+      }
+    ]
+  }
+}

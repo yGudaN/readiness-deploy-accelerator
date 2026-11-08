@@ -31,6 +31,15 @@ for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
   const campos = new Set()
   const saidas = new Set()
   const idsEtapas = new Set()
+  // Saidas gravadas por modulos auxiliares (.psm1 do item e compartilhados, ex.: PastaEvidencias)
+  const pastasAux = [join(base, 'scripts'), join(pastaModulos, '_compartilhado')]
+  for (const pasta of pastasAux.filter(existsSync)) {
+    for (const f of readdirSync(pasta).filter((n) => n.endsWith('.psm1'))) {
+      const caminhoAux = join(pasta, f)
+      if (!scripts.includes(caminhoAux)) scripts.push(caminhoAux)
+      for (const s of readFileSync(caminhoAux, 'utf8').matchAll(/Set-BizappSaida\s+-Nome\s+'([^']+)'/g)) saidas.add(s[1])
+    }
+  }
   for (const etapa of m.etapas) {
     if (!etapa.id || !etapa.titulo) erro('toda etapa precisa de "id" e "titulo"')
     if (idsEtapas.has(etapa.id)) erro(`etapa duplicada: ${etapa.id}`)
@@ -59,13 +68,17 @@ for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
       for (const t of etapa.script.tokens ?? []) {
         for (const chave of ['nome', 'clientId', 'tenant', 'escopo', 'proposito']) if (!t[chave]) erro(`etapa ${etapa.id}: token sem "${chave}"`)
         if (t.clientId && !/^(@[a-z-]+|\{\{\s*\w+\s*\}\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(t.clientId)) {
-          erro(`etapa ${etapa.id}: clientId "${t.clientId}" deve ser um GUID, {{Campo}} ou cliente conhecido (@azure-powershell)`)
+          erro(`etapa ${etapa.id}: clientId "${t.clientId}" deve ser um GUID, {{Campo}} ou cliente conhecido (@azure-powershell, @power-platform-cli, @graph-cli)`)
         }
-        const conteudo = existsSync(caminho) ? readFileSync(caminho, 'utf8') : ''
+        // O token pode ser lido no proprio script ou num .psm1 auxiliar do item
+        const auxiliares = existsSync(join(base, 'scripts'))
+          ? readdirSync(join(base, 'scripts')).filter((n) => n.endsWith('.psm1')).map((n) => readFileSync(join(base, 'scripts', n), 'utf8'))
+          : []
+        const conteudo = [existsSync(caminho) ? readFileSync(caminho, 'utf8') : '', ...auxiliares].join('\n')
         if (!new RegExp(`-Nome\\s+'?${t.nome}'?`).test(conteudo)) avisos.push(`${dir.name}: etapa ${etapa.id} declara o token "${t.nome}", mas o script nao chama Get-BizappToken -Nome ${t.nome}`)
       }
       for (const entrada of etapa.script.entradas ?? []) {
-        if (!campos.has(entrada)) erro(`etapa ${etapa.id}: entrada "${entrada}" nao e um campo desta etapa ou de uma anterior`)
+        if (!campos.has(entrada) && !saidas.has(entrada)) erro(`etapa ${etapa.id}: entrada "${entrada}" nao e um campo nem uma saida desta etapa ou de uma anterior`)
       }
     }
   }

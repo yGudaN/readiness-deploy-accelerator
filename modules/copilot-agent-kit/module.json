@@ -3,7 +3,7 @@
   "nome": "Copilot Agent Kit",
   "versao": "1.0.0",
   "resumo": "Kit oficial da Microsoft (Power CAT) para testar, analisar e governar agentes do Copilot Studio.",
-  "descricao": "Conjunto de apps no Power Platform para quem cria e administra agentes: testes automatizados de conversas, indicadores de uso e qualidade, inventário de agentes do tenant, revisão de agentes e hub de conformidade. Ajuda o COE a acompanhar a qualidade e a governança dos agentes publicados.",
+  "descricao": "Conjunto de apps no Power Platform para quem cria e administra agentes: testes automatizados de conversas, indicadores de uso e qualidade, inventário de agentes do tenant, revisão de agentes e hub de conformidade. Ajuda a equipe de governança a acompanhar a qualidade e a governança dos agentes publicados.",
   "tempoEstimadoMin": 45,
   "papeisNecessarios": [
     "Administrador do sistema no ambiente",
@@ -178,7 +178,7 @@
     ]
   },
   "oQueInstala": [
-    "Creator Kit (CreatorKitCore): componentes visuais da Microsoft exigidos pelo kit",
+    "Creator Kit: componentes visuais da Microsoft exigidos pelo kit",
     "Copilot Agent Kit: apps, tabelas e fluxos no ambiente escolhido (fluxos desligados até o Setup Wizard)",
     "Configurações do ambiente: componentes de código em canvas apps e Power Apps code apps ligados"
   ]
