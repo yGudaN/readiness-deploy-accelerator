@@ -38,7 +38,11 @@ for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
     for (const c of etapa.campos ?? []) {
       if (campos.has(c.id)) erro(`campo duplicado: ${c.id}`)
       campos.add(c.id)
-      if (!['texto', 'url', 'guid'].includes(c.tipo)) erro(`campo ${c.id}: tipo "${c.tipo}" invalido`)
+      if (!['texto', 'url', 'guid', 'escolha'].includes(c.tipo)) erro(`campo ${c.id}: tipo "${c.tipo}" invalido`)
+      if (c.tipo === 'escolha') {
+        if (!Array.isArray(c.opcoes) || c.opcoes.length < 2) erro(`campo ${c.id}: "escolha" precisa de pelo menos 2 opcoes`)
+        else if (c.padrao && !c.opcoes.some((o) => o.valor === c.padrao)) erro(`campo ${c.id}: padrao "${c.padrao}" nao e uma das opcoes`)
+      }
       if (c.padraoRegex) { try { new RegExp(c.padraoRegex) } catch { erro(`campo ${c.id}: regex invalida`) } }
     }
     for (const a of etapa.arquivos ?? []) {

@@ -5,7 +5,8 @@ const GUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a
 /** Mensagem de erro do campo, ou null se valido. */
 export function validarCampo(campo: CampoDef, valor: string): string | null {
   const v = valor.trim()
-  if (!v) return campo.obrigatorio ? 'Campo obrigatório.' : null
+  if (!v) return campo.obrigatorio ? (campo.tipo === 'escolha' ? 'Escolha uma opção.' : 'Campo obrigatório.') : null
+  if (campo.tipo === 'escolha') return campo.opcoes?.some((o) => o.valor === v) ? null : 'Escolha uma opção.'
   if (campo.tipo === 'guid' && !GUID.test(v)) return `Formato esperado: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (${v.length} de 36 caracteres).`
   if (campo.tipo === 'url' && !/^https:\/\/\S+$/i.test(v)) return 'Informe uma URL começando com https://'
   if (campo.padraoRegex && !new RegExp(campo.padraoRegex).test(v)) return campo.mensagemRegex ?? 'Formato inválido.'

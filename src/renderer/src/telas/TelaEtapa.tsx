@@ -49,7 +49,10 @@ export function TelaEtapa(p: Props) {
         {modulo.nome} · Etapa {posicao} de {modulo.etapas.length}
       </div>
       <h1 className="titulo-tela">{etapa.titulo}</h1>
-      {etapa.descricao && <p className="descricao-tela">{etapa.descricao}</p>}
+      {etapa.descricao && <p className="descricao-tela">{aplicarModelo(etapa.descricao, valores)}</p>}
+      {etapa.aviso && aplicarModelo(etapa.aviso, valores).trim() && (
+        <div className="cartao aviso-etapa">{aplicarModelo(etapa.aviso, valores)}</div>
+      )}
 
       {etapa.instrucoes && (
         <div className="cartao">

@@ -29,8 +29,13 @@ ReadinessDeployAccelerator/
 │       ├── module.json
 │       └── scripts/                            Dataverse.psm1 (Web API + importação com progresso),
 │                                               01-verificar-ambiente, 02-configurar-ambiente,
-│                                               03-importar-creator-kit, 04-importar-agent-kit
+│   │                                           03-importar-creator-kit, 04-importar-agent-kit
+│   └── environment-routing/
+│       ├── module.json
+│       └── scripts/                            ConfiguracoesTenant.psm1 (configurações do tenant),
+│                                               01-verificar-tenant, 02-ativar-roteamento
 ├── testes-manuais/  roteiros PowerShell usados para validar cada item antes de virar módulo
+├── PENDENCIAS.md    decisões em aberto com o time sobre os itens do catálogo
 ├── src/
 │   ├── main/        processo principal: lê manifestos, verifica pré-requisitos, roda o pwsh
 │   ├── preload/     ponte segura entre as telas e o processo principal
@@ -80,7 +85,7 @@ Regera `build/icon.png` (ícone do app e do instalador, fundo transparente) a pa
 
 1. Crie `modules/<id>/module.json` (o `id` precisa ser igual ao nome da pasta). Use o da Biblioteca como modelo; os tipos estão em [`src/shared/tipos.ts`](src/shared/tipos.ts).
 2. Para cada etapa, defina o que ela tem:
-   - `campos`: tipo `texto`, `url` ou `guid`, com `obrigatorio`, `padrao` (aceita `{{OutroCampo}}`) e `padraoRegex`;
+   - `campos`: tipo `texto`, `url` ou `guid`, com `obrigatorio`, `padrao` (aceita `{{OutroCampo}}`) e `padraoRegex`; ou tipo `escolha`, com `opcoes` (`valor`, `rotulo`, `descricao`), mostrado como lista de opções;
    - `instrucoes`, `arquivos` e `links`, para passos manuais;
    - `confirmacao`: caixa que precisa ser marcada para avançar;
    - `script`: o PowerShell que a etapa roda. Com `obrigatorio: true`, a etapa só avança depois de o script terminar com sucesso, e precisa rodar de novo se algum campo mudar.
@@ -133,7 +138,9 @@ Write-BizappProgresso -Percentual 42 -Fase 'Importando'  # mostra a barra de pro
 
 ## O que ainda falta
 
-- **Testar pelo instalador o Copilot Agent Kit** num ambiente real. O procedimento foi validado manualmente com o PAC CLI (`testes-manuais/Teste-CopilotAgentKit.ps1`), mas o módulo usa o login do app e a Web API do Dataverse, que ainda não rodaram contra um ambiente.
+- **Environment Routing: regras de roteamento** em aberto com o time. Veja [PENDENCIAS.md](PENDENCIAS.md).
+- **Testar pelo instalador o Environment Routing** num tenant real. O procedimento foi validado manualmente com o PAC CLI (`testes-manuais/Teste-EnvironmentRouting.ps1`), mas o módulo usa o login do app e a API de administração do Power Platform, que ainda não rodaram contra um tenant.
+- **Copilot Agent Kit:** ligar o code apps pela Power Platform API ainda não rodou num ambiente onde ele estivesse desligado.
 - **Token longo:** a importação do Copilot Agent Kit leva de 30 a 40 min, perto da validade de um token do Dataverse (60 a 90 min). Se ele expirar durante o acompanhamento, a etapa mostra o erro, mas a importação continua no ambiente; ao rodar de novo, a etapa reconhece a solução instalada.
 - **Assinatura de código.** Sem certificado, o Windows mostra o aviso do SmartScreen ao abrir o instalador.
 - **Atualização automática** (`electron-updater`) e a publicação dos instaladores.

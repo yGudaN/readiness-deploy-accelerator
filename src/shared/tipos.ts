@@ -6,12 +6,21 @@ export type PreRequisito =
   | { tipo: 'pwsh'; versaoMinima: string }
   | { tipo: 'modulo-ps'; nome: string; versaoMinima?: string; instalavel?: boolean }
 
-export type TipoCampo = 'texto' | 'url' | 'guid'
+export type TipoCampo = 'texto' | 'url' | 'guid' | 'escolha'
+
+/** Opcao de um campo do tipo "escolha" (mostrado como lista de opcoes, uma selecionada). */
+export interface OpcaoCampo {
+  valor: string
+  rotulo: string
+  descricao?: string
+}
 
 export interface CampoDef {
   id: string
   rotulo: string
   tipo: TipoCampo
+  /** Obrigatorio quando tipo = "escolha". */
+  opcoes?: OpcaoCampo[]
   obrigatorio?: boolean
   /** Valor inicial. Aceita {{OutroCampo}} para reaproveitar valores ja preenchidos. */
   padrao?: string
@@ -64,7 +73,10 @@ export interface ScriptDef {
 export interface EtapaDef {
   id: string
   titulo: string
+  /** Aceita {{Campo}}. */
   descricao?: string
+  /** Destaque logo abaixo da descricao (ex.: estado atual). Aceita {{Campo}}; se ficar vazio, nao aparece. */
+  aviso?: string
   /** Passo a passo exibido em lista numerada. Aceita {{Campo}}. */
   instrucoes?: string[]
   campos?: CampoDef[]

@@ -66,7 +66,16 @@ function criarSimulador(): ApiInstalador {
         paginas: { BibliotecaUrl: `${(valores.SiteUrl ?? '').replace(/\/$/, '')}/SitePages/${valores.BibliotecaPageName}.aspx` },
         ambiente: { NomeAmbiente: 'Contoso Demo', EnvironmentId: '00000000-0000-4000-8000-0000000000aa' },
         'creator-kit': { VersaoCreatorKit: '1.0.20250310.1' },
-        'agent-kit': { VersaoAgentKit: '20261030.2' }
+        'agent-kit': { VersaoAgentKit: '20261030.2' },
+        // Simula um tenant que ja esta com o roteamento ligado para todos
+        tenant: {
+          Conta: 'admin@contoso.onmicrosoft.com',
+          TenantId: '00000000-0000-4000-8000-0000000000bb',
+          RoteamentoAntes: 'Ligado, para makers novos e existentes',
+          EstadoAtual: 'Ligado, para makers novos e existentes',
+          QuemRotear: 'todos'
+        },
+        ativar: { RoteamentoDepois: valores.QuemRotear === 'todos' ? 'Ligado, para makers novos e existentes' : 'Ligado, só para makers novos' }
       }
       return simular(
         saidas[etapaId] ?? {},
