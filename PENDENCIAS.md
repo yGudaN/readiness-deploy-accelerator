@@ -16,3 +16,13 @@ Decisões em aberto com o time do COE. Não fazem parte do instalador até serem
 3. Se sim: pesquisar a API das regras de roteamento e adicionar como etapa do módulo `environment-routing`.
 
 **Observação:** o roteamento ficou ligado no tenant de demo (crm202149) depois do teste.
+
+## Excesso de compartilhamento no SharePoint (AUTO-34): testar com SharePoint Advanced Management
+
+**Situação:** o item está no instalador desde a v0.8.0. A consulta foi validada no teste manual (09/11/2026: 14 sites, sem erro) e pelo instalador na v0.8.1, incluindo o login próprio do SharePoint no navegador padrão.
+
+**O que não foi testado:** relatórios de governança de acesso (permissões, atividade, detalhado de "Todos"), consultar/baixar relatório e ligar/desligar a coleta de atividade. O tenant de demo tem Office 365 E5 sem Copilot nem SharePoint Advanced Management, e o SharePoint recusa com *"experimental feature that is not supported in the current environment"*. O instalador transforma essa recusa no aviso "Bloqueado" (testado só com simulação).
+
+**Também não testado:** a etapa de mudar o compartilhamento de um site.
+
+**Para fechar:** rodar `testes-manuais/Teste-AUTO34.ps1` e o item no instalador num tenant com licença Microsoft 365 Copilot ou SharePoint Advanced Management.

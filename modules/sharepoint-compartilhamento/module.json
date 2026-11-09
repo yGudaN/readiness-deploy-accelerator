@@ -1,0 +1,161 @@
+{
+  "id": "sharepoint-compartilhamento",
+  "nome": "Excesso de compartilhamento no SharePoint",
+  "versao": "1.0.0",
+  "resumo": "Levanta o que está compartilhado demais no SharePoint antes de liberar o Copilot.",
+  "descricao": "O Copilot encontra tudo o que o usuário tem permissão de ver. Este item levanta o compartilhamento externo do tenant e de cada site, mostra quais sites permitem links para qualquer pessoa e verifica se o SharePoint Advanced Management está disponível. Com ele, você também pode pedir os relatórios de governança de acesso do SharePoint, ligar a coleta de atividade de \"Todos exceto usuários externos\" e ajustar o compartilhamento de um site. A consulta não altera nada e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta do compartilhamento do tenant e de cada site (somente leitura)",
+    "Opcional: relatórios de governança de acesso e coleta de atividade (exigem SharePoint Advanced Management)",
+    "Opcional: mudança do compartilhamento externo de um site"
+  ],
+  "tempoEstimadoMin": 10,
+  "papeisNecessarios": [
+    "Administrador do SharePoint ou Administrador Global"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Authentication", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Users", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Identity.DirectoryManagement", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Identity.Governance", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Online.SharePoint.PowerShell", "versaoMinima": "16.0.25409.0", "instalavel": true }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o compartilhamento",
+      "descricao": "Somente leitura: confere a conta e a função, lê o compartilhamento externo do tenant e de cada site (sem OneDrive), os relatórios de governança já existentes e se o SharePoint Advanced Management está disponível. Nada é alterado. Além do login do instalador, o SharePoint pede um login próprio no navegador padrão do Windows: use a mesma conta.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Sites.Read.All",
+            "proposito": "Conferir a conta, a função, as licenças e o endereço do SharePoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "governanca",
+      "titulo": "Relatórios e coleta de atividade (opcional)",
+      "descricao": "Recursos do SharePoint Advanced Management, que vem com o Microsoft 365 Copilot. Os relatórios são processados pelo SharePoint e podem levar horas: depois de iniciar, volte e use \"Consultar um relatório\" ou \"Baixar um relatório\" com o ID. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "SharePoint Advanced Management", "valor": "{{RecursoSam}}", "okQuando": ["Disponível"], "alertaQuando": ["Não", "Licença encontrada"] },
+          { "rotulo": "Coleta de atividade", "valor": "{{ColetaAtividade}}", "okQuando": ["Ligada"] },
+          { "rotulo": "Função Administrador do SharePoint Advanced Management", "valor": "{{FuncaoSam}}" }
+        ],
+        "nota": "Sem o SharePoint Advanced Management, as opções abaixo param com o aviso \"Bloqueado\" e nada é alterado."
+      },
+      "campos": [
+        {
+          "id": "AcaoGovernanca",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "relatorio-permissoes",
+          "opcoes": [
+            { "valor": "relatorio-permissoes", "rotulo": "Iniciar o relatório de permissões dos sites", "descricao": "Quem tem acesso a cada site. Não muda nenhuma permissão." },
+            { "valor": "ligar-coleta", "rotulo": "Ligar a coleta de atividade", "descricao": "Registra o uso de conteúdo compartilhado com \"Todos exceto usuários externos\". Precisa de 24 horas antes do relatório de atividade." },
+            { "valor": "relatorio-atividade", "rotulo": "Iniciar o relatório de atividade", "descricao": "Sites e itens compartilhados com \"Todos exceto usuários externos\" que tiveram uso recente." },
+            { "valor": "snapshot-todos", "rotulo": "Iniciar o relatório detalhado de \"Todos\"", "descricao": "Exige o relatório de permissões gerado antes e a função Administrador do SharePoint Advanced Management." },
+            { "valor": "consultar-relatorio", "rotulo": "Consultar um relatório", "descricao": "Mostra o status de um relatório pelo ID." },
+            { "valor": "baixar-relatorio", "rotulo": "Baixar um relatório", "descricao": "Salva um relatório concluído na pasta de evidências." },
+            { "valor": "desligar-coleta", "rotulo": "Desligar a coleta de atividade" }
+          ]
+        },
+        {
+          "id": "ReportId",
+          "rotulo": "ID do relatório (só para consultar ou baixar)",
+          "tipo": "guid",
+          "ajuda": "Preenchido sozinho com o último relatório iniciado ou encontrado na consulta."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-governanca.ps1",
+        "rotuloBotao": "Executar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "AcaoGovernanca", "ReportId"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Sites.Read.All",
+            "proposito": "Conferir a conta, a função, as licenças e o endereço do SharePoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "site",
+      "titulo": "Ajustar o compartilhamento de um site (opcional)",
+      "descricao": "Muda o compartilhamento externo de um site e confere o resultado. Atenção: reduzir o compartilhamento pode fazer links e convidados existentes pararem de funcionar. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Compartilhamento externo do tenant", "valor": "{{CompartilhamentoTenant}}", "alertaQuando": ["Qualquer pessoa"] },
+          { "rotulo": "Sites", "valor": "{{SitesLidos}}" }
+        ],
+        "nota": "Um site não pode ser mais aberto que o tenant. A lista completa, site a site, está em sites-sharing.csv na pasta de evidências."
+      },
+      "campos": [
+        {
+          "id": "SiteUrl",
+          "rotulo": "Endereço do site",
+          "tipo": "url",
+          "placeholder": "https://empresa.sharepoint.com/sites/nome-do-site",
+          "ajuda": "Endereço completo do site, deste tenant."
+        },
+        {
+          "id": "NivelCompartilhamento",
+          "rotulo": "Compartilhamento externo do site",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "ExistingExternalUserSharingOnly",
+          "opcoes": [
+            { "valor": "Disabled", "rotulo": "Somente pessoas da organização", "descricao": "Sem compartilhamento externo." },
+            { "valor": "ExistingExternalUserSharingOnly", "rotulo": "Somente convidados existentes", "descricao": "Convidados que já estão no diretório." },
+            { "valor": "ExternalUserSharingOnly", "rotulo": "Novos e existentes convidados", "descricao": "Convidados precisam entrar com login." },
+            { "valor": "ExternalUserAndGuestSharing", "rotulo": "Qualquer pessoa", "descricao": "Inclui links que funcionam sem login." }
+          ]
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-compartilhamento-site.ps1",
+        "rotuloBotao": "Aplicar no site",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "SiteUrl", "NivelCompartilhamento"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Sites.Read.All",
+            "proposito": "Conferir a conta, a função, as licenças e o endereço do SharePoint"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "SharePoint", "valor": "{{EnderecoSharePoint}}" },
+      { "rotulo": "Compartilhamento do tenant", "valor": "{{CompartilhamentoTenant}}" },
+      { "rotulo": "Sites", "valor": "{{SitesLidos}}" },
+      { "rotulo": "SharePoint Advanced Management", "valor": "{{RecursoSam}}" },
+      { "rotulo": "Último relatório", "valor": "{{ReportId}}" },
+      { "rotulo": "Site ajustado", "valor": "{{CompartilhamentoSite}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ]
+  }
+}

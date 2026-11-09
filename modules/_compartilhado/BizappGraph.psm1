@@ -20,7 +20,9 @@ function Import-BizappModulosGraph {
         throw "Os módulos do Microsoft Graph precisam estar instalados na mesma versão ($($todos -join ', ')). Reinstale-os pela tela de pré-requisitos."
     }
     $versao = $comuns | Sort-Object { [version]$_ } | Select-Object -Last 1
-    foreach ($m in $todos) { Import-Module $m -RequiredVersion $versao -ErrorAction Stop }
+    # -Global: sem ele os comandos ficam so dentro deste .psm1 e o script da etapa acabaria
+    # carregando outra versao do Graph por autoload (ou nao achando o comando)
+    foreach ($m in $todos) { Import-Module $m -RequiredVersion $versao -Global -ErrorAction Stop }
     Write-BizappLog "Microsoft Graph PowerShell $versao" -Nivel discreto
 }
 

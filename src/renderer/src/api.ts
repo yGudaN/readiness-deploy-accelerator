@@ -112,8 +112,24 @@ function criarSimulador(): ApiInstalador {
             'Modo de relatório (não exige MFA, só registra)'
         }
       }
+      // Item do SharePoint: simula um tenant sem SharePoint Advanced Management
+      const saidasSharePoint: Record<string, Record<string, string>> = {
+        consultar: {
+          Conta: 'admin@contoso.onmicrosoft.com',
+          TenantId: '00000000-0000-4000-8000-0000000000bb',
+          EnderecoSharePoint: 'https://contoso.sharepoint.com',
+          CompartilhamentoTenant: 'Qualquer pessoa (links sem login e novos convidados)',
+          SitesLidos: '14 sites · 3 com links para qualquer pessoa liberados',
+          RecursoSam: 'Não encontrado (licença ou recurso)',
+          ColetaAtividade: 'Não disponível',
+          FuncaoSam: 'Não',
+          PastaEvidencias: 'C:\Users\voce\Documents\Readiness Deploy Accelerator\evidencias\SharePoint-Compartilhamento'
+        },
+        site: { CompartilhamentoSite: 'Projetos · Somente convidados existentes' }
+      }
+      const porModulo: Record<string, Record<string, Record<string, string>>> = { 'mfa-copilot': saidasMfa, 'sharepoint-compartilhamento': saidasSharePoint }
       return simular(
-        (moduloId === 'mfa-copilot' ? saidasMfa[etapaId] : saidas[etapaId]) ?? {},
+        (porModulo[moduloId] ?? saidas)[etapaId] ?? {},
         token ? { proposito: token.proposito, navegador: navegadorId } : undefined,
         etapaId.endsWith('-kit')
       )

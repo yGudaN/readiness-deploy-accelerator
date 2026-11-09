@@ -74,7 +74,7 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
                   onClick={() => alternarExpandido(m.id)}
                 >
                   <span className="item-lista__nome">{m.nome}</span>
-                  {instalados.includes(m.id) && <span className="etiqueta etiqueta--alerta">✓ Instalado</span>}
+                  {instalados.includes(m.id) && <span className="etiqueta etiqueta--alerta">✓ Concluído</span>}
                   {pendente.length > 0 && <span className="etiqueta etiqueta--alerta">Pré-requisito pendente</span>}
                   <span className="item-lista__seta" aria-hidden="true" />
                 </button>

@@ -41,10 +41,14 @@ ReadinessDeployAccelerator/
 │   │   ├── module.json
 │   │   └── scripts/                            GruposCopilot.psm1 (funções do script validado),
 │   │                                           01-consultar, 02-criar-grupos, 03-membros
-│   └── mfa-copilot/                            AUTO-33
+│   ├── mfa-copilot/                            AUTO-33
+│   │   ├── module.json
+│   │   └── scripts/                            MfaCopilot.psm1 (funções do script validado),
+│   │                                           01-consultar, 02-criar-relatorio, 03-mudar-estado
+│   └── sharepoint-compartilhamento/            AUTO-34
 │       ├── module.json
-│       └── scripts/                            MfaCopilot.psm1 (funções do script validado),
-│                                               01-consultar, 02-criar-relatorio, 03-mudar-estado
+│       └── scripts/                            SharePointCompartilhamento.psm1 (funções do script validado),
+│                                               01-consultar, 02-governanca, 03-compartilhamento-site
 ├── testes-manuais/  roteiros PowerShell usados para validar cada item antes de virar módulo
 ├── PENDENCIAS.md    decisões em aberto com o time sobre os itens do catálogo
 ├── src/
