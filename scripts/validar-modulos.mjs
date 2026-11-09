@@ -88,6 +88,20 @@ for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
   }
 }
 
+// Dependencias entre itens: o id precisa existir no catalogo
+for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
+  if (!dir.isDirectory() || dir.name.startsWith('_')) continue
+  const arquivo = join(pastaModulos, dir.name, 'module.json')
+  if (!existsSync(arquivo)) continue
+  let m
+  try { m = JSON.parse(readFileSync(arquivo, 'utf8')) } catch { continue }
+  for (const d of m.dependeDe ?? []) {
+    if (!d.id || !d.precisaDe) erros.push(`${dir.name}: dependeDe precisa de "id" e "precisaDe"`)
+    else if (!idsModulos.has(d.id)) erros.push(`${dir.name}: dependeDe "${d.id}" nao e um item do catalogo`)
+    else if (d.id === m.id) erros.push(`${dir.name}: o item nao pode depender de si mesmo`)
+  }
+}
+
 // Sintaxe dos scripts PowerShell
 const lista = scripts.map((s) => `'${s.replace(/'/g, "''")}'`).join(',')
 try {

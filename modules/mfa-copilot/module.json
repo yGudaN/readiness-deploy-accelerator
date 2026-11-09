@@ -20,6 +20,13 @@
     { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Groups", "versaoMinima": "2.41.2", "instalavel": true },
     { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Identity.SignIns", "versaoMinima": "2.41.2", "instalavel": true }
   ],
+  "dependeDe": [
+    {
+      "id": "grupos-copilot",
+      "precisaDe": "os grupos Copilot-Premium e Copilot-Geral",
+      "dica": "Não sabe se os grupos já existem? Marque também este item: durante a instalação ele confere o tenant, avisa se os grupos já existem e só cria o que faltar."
+    }
+  ],
   "etapas": [
     {
       "id": "consultar",

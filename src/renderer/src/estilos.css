@@ -274,6 +274,14 @@ button, input { font: inherit; letter-spacing: inherit; }
 .item-lista--selecionado .item-lista__check { border: 0; background: var(--biz-gradient-01); }
 .item-lista__selecao input:focus-visible + .item-lista__check { outline: 2px solid var(--biz-light-purple); outline-offset: 2px; }
 
+/* Aviso de dependencia ao marcar um item (ex.: MFA precisa dos grupos) */
+.dependencia { display: flex; gap: 12px; margin: 0 16px 14px 18px; padding: 12px 14px; border-radius: 12px; background: var(--biz-off-white); }
+.item-lista--expandido .dependencia { background: var(--biz-white); }
+.dependencia__icone { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--biz-black); color: var(--biz-white); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+.dependencia__texto p { margin: 0 0 6px; line-height: 1.45; }
+.dependencia__dica { color: var(--biz-cinza); font-size: 13px; }
+.dependencia__botoes { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+
 /* "Selecionar todos" acima da lista: alinhado com as caixas das linhas */
 .catalogo-barra { display: flex; align-items: center; justify-content: space-between; margin: 0 0 8px; }
 .catalogo-barra__todos { display: flex; gap: 12px; padding: 6px 6px 6px 19px; font-weight: 600; font-size: 14px; color: var(--biz-black); }

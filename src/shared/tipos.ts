@@ -115,6 +115,16 @@ export interface ItemResumoDef {
   valor: string
 }
 
+/** Outro item do catalogo do qual este depende (ex.: os grupos que a politica usa). */
+export interface DependenciaDef {
+  /** id do item do catalogo. */
+  id: string
+  /** O que este item precisa que o outro cria (ex.: "os grupos Copilot-Premium e Copilot-Geral"). */
+  precisaDe: string
+  /** Dica para quem nao sabe se ja tem (aparece no aviso ao marcar o item). */
+  dica?: string
+}
+
 export interface ModuloManifesto {
   id: string
   nome: string
@@ -128,6 +138,8 @@ export interface ModuloManifesto {
   /** Papeis administrativos que quem instala precisa ter. */
   papeisNecessarios?: string[]
   preRequisitos: PreRequisito[]
+  /** Itens do catalogo que precisam existir antes (aviso no catalogo; a validacao real fica no script). */
+  dependeDe?: DependenciaDef[]
   etapas: EtapaDef[]
   resumoFinal?: { itens?: ItemResumoDef[]; links?: LinkDef[] }
 }

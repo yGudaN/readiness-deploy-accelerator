@@ -21,6 +21,7 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
   const [expandidos, setExpandidos] = useState<string[]>([])
   const alternarExpandido = (id: string): void =>
     setExpandidos((e) => (e.includes(id) ? e.filter((x) => x !== id) : [...e, id]))
+  const nomeDe = (id: string): string => modulos.find((m) => m.id === id)?.nome ?? id
   const marcados = modulos.filter((m) => selecionados.includes(m.id)).length
   const todos = modulos.length > 0 && marcados === modulos.length
   const alguns = marcados > 0 && !todos
@@ -55,6 +56,10 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
           const expandido = expandidos.includes(m.id)
           const pendente = pendencias[m.id] ?? []
           const idDetalhes = `detalhes-${m.id}`
+          // Dependencias que nao estao marcadas nem foram instaladas nesta sessao
+          const faltam = selecionado
+            ? (m.dependeDe ?? []).filter((d) => !selecionados.includes(d.id) && !instalados.includes(d.id))
+            : []
           return (
             <li key={m.id} className={`item-lista${selecionado ? ' item-lista--selecionado' : ''}${expandido ? ' item-lista--expandido' : ''}`}>
               <div className="item-lista__linha">
@@ -74,6 +79,29 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
                   <span className="item-lista__seta" aria-hidden="true" />
                 </button>
               </div>
+              {faltam.map((d) => (
+                <div key={d.id} className="dependencia" role="note">
+                  <div className="dependencia__icone" aria-hidden="true">!</div>
+                  <div className="dependencia__texto">
+                    <p>
+                      Este item precisa d{/^(o|a)s? /.test(d.precisaDe) ? '' : 'e '}{d.precisaDe}, criados pelo item <strong>{nomeDe(d.id)}</strong>.
+                      Se já existem no tenant, pode seguir sem ele.
+                    </p>
+                    {d.dica && <p className="dependencia__dica">{d.dica}</p>}
+                    <div className="dependencia__botoes">
+                      <button className="botao botao--secundario botao--pequeno" onClick={() => onAlternar(d.id)}>
+                        Marcar também
+                      </button>
+                      <button
+                        className="botao botao--texto botao--pequeno"
+                        onClick={() => setExpandidos((e) => (e.includes(d.id) ? e : [...e, d.id]))}
+                      >
+                        Ver o que ele faz
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
               {expandido && (
                 <div id={idDetalhes} className="item-lista__detalhes">
                   <p className="item-lista__resumo">{m.resumo}</p>
@@ -93,6 +121,9 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
                     <span className="etiqueta">{m.etapas.length} etapas</span>
                     {m.papeisNecessarios?.map((p) => (
                       <span key={p} className="etiqueta">{p}</span>
+                    ))}
+                    {m.dependeDe?.map((d) => (
+                      <span key={d.id} className="etiqueta">Depende de: {nomeDe(d.id)}</span>
                     ))}
                     {pendente.length > 0 && <span className="etiqueta etiqueta--alerta">Falta: {pendente.join(', ')}</span>}
                   </div>

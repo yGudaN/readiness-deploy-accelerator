@@ -89,7 +89,18 @@ export function App() {
   }, [algumaEmAndamento])
 
   const passos = useMemo<Passo[]>(() => {
-    const escolhidos = modulos.filter((m) => selecionados.includes(m.id))
+    // Ordem do catalogo, mas um item que depende de outro (ex.: MFA -> grupos) roda depois dele
+    const escolhidos: ModuloManifesto[] = []
+    const incluir = (m: ModuloManifesto, visitando: Set<string>): void => {
+      if (escolhidos.includes(m) || visitando.has(m.id)) return
+      visitando.add(m.id)
+      for (const d of m.dependeDe ?? []) {
+        const dep = modulos.find((x) => x.id === d.id && selecionados.includes(x.id))
+        if (dep) incluir(dep, visitando)
+      }
+      escolhidos.push(m)
+    }
+    modulos.filter((m) => selecionados.includes(m.id)).forEach((m) => incluir(m, new Set()))
     const etapas = escolhidos.flatMap((modulo, i): Passo[] => {
       const usaLogin = modulo.etapas.some((e) => e.script?.tokens?.length)
       // Pergunta a partir do 2o item (ou ja no 1o, se a sessao tem uma conta conectada).

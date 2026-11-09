@@ -1,7 +1,7 @@
 {
   "name": "readiness-deploy-accelerator",
   "productName": "Readiness Deploy Accelerator",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "description": "Readiness Deploy Accelerator (Bizapp) - catalogo de solucoes COE instaladas via PowerShell",
   "author": "Bizapp",
