@@ -9,16 +9,21 @@ interface Props {
   /** Pre-requisitos pendentes por id de modulo. */
   pendencias: Record<string, string[]>
   onAlternar: (id: string) => void
+  /** Marca todos os itens (true) ou nenhum (false). */
+  onSelecionarTodos: (todos: boolean) => void
 }
 
 /**
  * Catalogo em lista: cada linha mostra so o nome (o catalogo deve passar de 30 itens).
  * Clicar na linha expande os detalhes; a caixa de selecao, a esquerda, escolhe o item.
  */
-export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, onAlternar }: Props) {
+export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, onAlternar, onSelecionarTodos }: Props) {
   const [expandidos, setExpandidos] = useState<string[]>([])
   const alternarExpandido = (id: string): void =>
     setExpandidos((e) => (e.includes(id) ? e.filter((x) => x !== id) : [...e, id]))
+  const marcados = modulos.filter((m) => selecionados.includes(m.id)).length
+  const todos = modulos.length > 0 && marcados === modulos.length
+  const alguns = marcados > 0 && !todos
 
   return (
     <>
@@ -27,6 +32,22 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
       <p className="descricao-tela">
         Marque os itens que deseja configurar no seu tenant. Clique no nome para ver o que cada um instala.
       </p>
+
+      <div className="catalogo-barra">
+        <label className={`item-lista__selecao catalogo-barra__todos${todos ? ' catalogo-barra__todos--marcado' : ''}`}>
+          <input
+            type="checkbox"
+            checked={todos}
+            ref={(el) => { if (el) el.indeterminate = alguns }}
+            onChange={() => onSelecionarTodos(!todos)}
+          />
+          <span className="item-lista__check" aria-hidden="true">{todos ? '✓' : alguns ? '–' : ''}</span>
+          <span>Selecionar todos</span>
+        </label>
+        <span className="catalogo-barra__contagem">
+          {marcados} de {modulos.length} selecionado{modulos.length === 1 ? '' : 's'}
+        </span>
+      </div>
 
       <ul className="catalogo-lista">
         {modulos.map((m) => {

@@ -1,0 +1,144 @@
+{
+  "id": "mfa-copilot",
+  "nome": "MFA para o Copilot",
+  "versao": "1.0.0",
+  "resumo": "Política de Acesso Condicional que exige MFA dos usuários do Copilot.",
+  "descricao": "Cria no Entra ID a política de Acesso Condicional \"MFA Copilot\", que exige autenticação multifator dos membros dos grupos Copilot-Premium e Copilot-Geral ao acessar o Office 365. A política é criada em modo de relatório: não bloqueia nem pede MFA a ninguém, só registra quem seria afetado, para você avaliar antes de ligar. A conta administrativa e as contas de emergência ficam sempre fora da política. Começa consultando o tenant, não duplica a política e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Uma política de Acesso Condicional \"MFA Copilot\", em modo de relatório",
+    "Opcional: ligar, desligar ou excluir a política depois de avaliar o relatório",
+    "Requer os grupos Copilot-Premium e Copilot-Geral e licença Microsoft Entra ID P1 ou P2"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador de Acesso Condicional, Administrador de Segurança ou Administrador Global"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Authentication", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Users", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Groups", "versaoMinima": "2.41.2", "instalavel": true },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Graph.Identity.SignIns", "versaoMinima": "2.41.2", "instalavel": true }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o tenant",
+      "descricao": "Somente leitura: confere a conta, a licença do Entra ID, os padrões de segurança, os grupos Copilot-Premium e Copilot-Geral e se a política já existe. Nada é alterado. A conta e o tenant confirmados aqui são exigidos nas próximas etapas.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Policy.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/Policy.ReadWrite.ConditionalAccess",
+            "proposito": "Consultar e administrar a política de Acesso Condicional no Entra ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": "criar",
+      "titulo": "Criar a política em modo de relatório",
+      "descricao": "Cria a política \"MFA Copilot\" para os dois grupos, no Office 365, exigindo MFA, em modo de relatório: ninguém é bloqueado nem precisa de MFA ainda. A conta {{Conta}} fica fora da política. Se a política já existir com esse desenho, nada é alterado.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Política MFA Copilot", "valor": "{{EstadoPolitica}}", "alertaQuando": ["Ligada", "Desligada"] },
+          { "rotulo": "Licença Microsoft Entra ID P1 ou P2", "valor": "{{LicencaEntra}}", "okQuando": ["Encontrada"], "alertaQuando": ["Não encontrada"] },
+          { "rotulo": "Padrões de segurança do Entra ID", "valor": "{{PadroesSeguranca}}", "okQuando": ["Desligados"], "alertaQuando": ["Ligados"] }
+        ]
+      },
+      "campos": [
+        {
+          "id": "ContasEmergencia",
+          "rotulo": "Contas de emergência (opcional)",
+          "tipo": "texto",
+          "placeholder": "emergencia@empresa.com",
+          "ajuda": "Contas administrativas reservadas que ficam fora da política, para nunca perder o acesso ao tenant. Separe várias com ponto e vírgula. São necessárias para ligar a política depois.",
+          "padraoRegex": "^\\s*([^@\\s;,]+@[^@\\s;,]+\\.[^@\\s;,]+)(\\s*[;,]\\s*[^@\\s;,]+@[^@\\s;,]+\\.[^@\\s;,]+)*\\s*[;,]?\\s*$",
+          "mensagemRegex": "Informe e-mails de login separados por ponto e vírgula."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-criar-relatorio.ps1",
+        "rotuloBotao": "Criar a política",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "ContasEmergencia"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Policy.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/Policy.ReadWrite.ConditionalAccess",
+            "proposito": "Consultar e administrar a política de Acesso Condicional no Entra ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": "estado",
+      "titulo": "Ligar, desligar ou excluir (opcional)",
+      "descricao": "Depois de avaliar o relatório da política no Entra ID, você pode ligá-la aqui. Pode pular esta etapa e deixar a política em modo de relatório.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Política MFA Copilot", "valor": "{{EstadoPolitica}}", "okQuando": ["Modo de relatório"], "alertaQuando": ["Ligada", "Não existe"] }
+        ]
+      },
+      "campos": [
+        {
+          "id": "NovoEstado",
+          "rotulo": "O que fazer com a política",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "relatorio",
+          "opcoes": [
+            { "valor": "relatorio", "rotulo": "Deixar em modo de relatório", "descricao": "Só registra quem seria cobrado de MFA. Também desfaz um \"Ligar\"." },
+            { "valor": "habilitar", "rotulo": "Ligar (exigir MFA)", "descricao": "Os membros dos dois grupos passam a precisar de MFA no Office 365. Exige conta de emergência." },
+            { "valor": "desabilitar", "rotulo": "Desligar", "descricao": "A política continua criada, mas sem efeito." },
+            { "valor": "excluir", "rotulo": "Excluir a política", "descricao": "Remove do tenant a política criada por este item." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoRisco",
+          "rotulo": "Confirmação (só para ligar ou excluir)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para ligar ou excluir a política, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-mudar-estado.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "ContasEmergencia", "NovoEstado", "ConfirmacaoRisco"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Policy.Read.All https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/Policy.ReadWrite.ConditionalAccess",
+            "proposito": "Consultar e administrar a política de Acesso Condicional no Entra ID"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Tenant", "valor": "{{TenantId}}" },
+      { "rotulo": "Política MFA Copilot", "valor": "{{EstadoPolitica}}" },
+      { "rotulo": "Contas de emergência", "valor": "{{ContasEmergencia}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir as políticas de Acesso Condicional", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/ConditionalAccessBlade/~/Policies" }
+    ]
+  }
+}

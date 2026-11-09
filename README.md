@@ -37,10 +37,14 @@ ReadinessDeployAccelerator/
 │   │   ├── module.json
 │   │   └── scripts/                            ConfiguracoesTenant.psm1 (configurações do tenant),
 │   │                                           01-verificar-tenant, 02-ativar-roteamento
-│   └── grupos-copilot/                         AUTO-22
+│   ├── grupos-copilot/                         AUTO-22
+│   │   ├── module.json
+│   │   └── scripts/                            GruposCopilot.psm1 (funções do script validado),
+│   │                                           01-consultar, 02-criar-grupos, 03-membros
+│   └── mfa-copilot/                            AUTO-33
 │       ├── module.json
-│       └── scripts/                            GruposCopilot.psm1 (funções do script validado),
-│                                               01-consultar, 02-criar-grupos, 03-membros
+│       └── scripts/                            MfaCopilot.psm1 (funções do script validado),
+│                                               01-consultar, 02-criar-relatorio, 03-mudar-estado
 ├── testes-manuais/  roteiros PowerShell usados para validar cada item antes de virar módulo
 ├── PENDENCIAS.md    decisões em aberto com o time sobre os itens do catálogo
 ├── src/

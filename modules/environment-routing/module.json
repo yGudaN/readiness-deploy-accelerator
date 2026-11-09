@@ -82,7 +82,13 @@
           }
         ]
       },
-      "aviso": "Hoje neste tenant: {{EstadoAtual}}. Se a opção marcada já for a atual, nada é alterado."
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Environment Routing", "valor": "{{EstadoAtual}}", "okQuando": ["Ligado"], "alertaQuando": ["Desligado"] }
+        ],
+        "nota": "Se a opção marcada já for a atual, nada é alterado."
+      }
     }
   ],
   "resumoFinal": {

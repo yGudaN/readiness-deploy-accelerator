@@ -9,12 +9,13 @@ interface Props {
   verificando: boolean
   instalacao?: EstadoExecucao
   onVerificar: () => void
-  onInstalar: (nome: string) => void
+  onInstalar: (nomes: string[]) => void
 }
 
 export function TelaPreRequisitos({ status, verificando, instalacao, onVerificar, onInstalar }: Props) {
   const instalando = !!instalacao?.emAndamento
   const { atual: navegador } = useNavegador()
+  const instalaveis = (status ?? []).flatMap((r) => (r.acao?.tipo === 'instalar-modulo' ? [r.acao.nome] : []))
 
   return (
     <>
@@ -47,7 +48,7 @@ export function TelaPreRequisitos({ status, verificando, instalacao, onVerificar
               </div>
             </div>
             {r.acao?.tipo === 'instalar-modulo' && (
-              <button className="botao botao--secundario botao--pequeno" disabled={instalando || verificando} onClick={() => onInstalar((r.acao as { nome: string }).nome)}>
+              <button className="botao botao--secundario botao--pequeno" disabled={instalando || verificando} onClick={() => onInstalar([(r.acao as { nome: string }).nome])}>
                 Instalar
               </button>
             )}
@@ -56,11 +57,25 @@ export function TelaPreRequisitos({ status, verificando, instalacao, onVerificar
                 Como instalar
               </button>
             )}
+            {r.linkOficial && r.acao?.tipo !== 'abrir-link' && (
+              <button
+                className="botao botao--texto botao--pequeno"
+                title={r.linkOficial}
+                onClick={() => void api.abrirLink(r.linkOficial as string, navegador)}
+              >
+                Página oficial ↗
+              </button>
+            )}
           </div>
         ))}
       </div>
 
       <div className="linha-botoes">
+        {instalaveis.length > 1 && (
+          <button className="botao botao--primario" disabled={instalando || verificando} onClick={() => onInstalar(instalaveis)}>
+            Instalar tudo ({instalaveis.length})
+          </button>
+        )}
         <button className="botao botao--texto" disabled={verificando || instalando} onClick={onVerificar}>
           {verificando ? 'Verificando...' : 'Verificar novamente'}
         </button>

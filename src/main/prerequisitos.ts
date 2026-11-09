@@ -51,6 +51,7 @@ export async function verificarPreRequisitos(modulos: ModuloManifesto[]): Promis
     versaoEncontrada: pwsh,
     detalhe: falhaPwsh ?? (pwshOk ? undefined : `Versão encontrada (${pwsh}) é anterior a ${minimaPwsh}.`),
     acao: pwshOk ? undefined : { tipo: 'abrir-link', url: URL_PWSH },
+    linkOficial: URL_PWSH,
     exigidoPor: exigidoPor((m) => m.preRequisitos.some((p) => p.tipo === 'pwsh'))
   }]
 
@@ -67,7 +68,8 @@ export async function verificarPreRequisitos(modulos: ModuloManifesto[]): Promis
       versaoEncontrada: encontrada,
       detalhe: ok || !pwshOk ? undefined : encontrada ? `Versão encontrada (${encontrada}) é anterior a ${minima}.` : 'Módulo não instalado.',
       acao: !ok && pwshOk && instalavel ? { tipo: 'instalar-modulo', nome } : undefined,
-      exigidoPor: exigidoPor((m) => m.preRequisitos.some((p) => p.tipo === 'modulo-ps' && p.nome === nome))
+      exigidoPor: exigidoPor((m) => m.preRequisitos.some((p) => p.tipo === 'modulo-ps' && p.nome === nome)),
+      linkOficial: `https://www.powershellgallery.com/packages/${nome}`
     })
   }
   return resultado

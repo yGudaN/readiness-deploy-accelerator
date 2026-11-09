@@ -1,4 +1,4 @@
-import type { ApiInstalador, EventoExecucao, ModuloManifesto } from '@shared/tipos'
+import type { ApiInstalador, EventoExecucao, ModuloManifesto, StatusPreRequisito } from '@shared/tipos'
 
 /**
  * Dentro do Electron a API vem do preload. No navegador (npm run dev:web) usamos um
@@ -48,11 +48,19 @@ function criarSimulador(): ApiInstalador {
     listarModulos: async () => Object.values(manifestos),
     verificarPreRequisitos: async () => {
       await espera(600)
+      const modulo = (nome: string, minima: string, usadoPor: string[]): StatusPreRequisito => ({
+        chave: `modulo-ps:${nome}`,
+        rotulo: `Módulo ${nome} ${minima} ou superior`,
+        linkOficial: `https://www.powershellgallery.com/packages/${nome}`,
+        exigidoPor: usadoPor,
+        ...(pnpInstalado
+          ? { ok: true, versaoEncontrada: minima }
+          : { ok: false, detalhe: 'Módulo não instalado.', acao: { tipo: 'instalar-modulo' as const, nome } })
+      })
       return [
-        { chave: 'pwsh', rotulo: 'PowerShell 7.4 ou superior', ok: true, versaoEncontrada: '7.6.0', exigidoPor: ['Biblioteca de Prompts e Skills'] },
-        pnpInstalado
-          ? { chave: 'modulo-ps:PnP.PowerShell', rotulo: 'Módulo PnP.PowerShell 3.0 ou superior', ok: true, versaoEncontrada: '3.4.0', exigidoPor: ['Biblioteca de Prompts e Skills'] }
-          : { chave: 'modulo-ps:PnP.PowerShell', rotulo: 'Módulo PnP.PowerShell 3.0 ou superior', ok: false, detalhe: 'Módulo não instalado.', acao: { tipo: 'instalar-modulo', nome: 'PnP.PowerShell' }, exigidoPor: ['Biblioteca de Prompts e Skills'] }
+        { chave: 'pwsh', rotulo: 'PowerShell 7.4 ou superior', ok: true, versaoEncontrada: '7.6.0', exigidoPor: ['Biblioteca de Prompts e Skills'], linkOficial: 'https://learn.microsoft.com/pt-br/powershell/scripting/install/installing-powershell-on-windows' },
+        modulo('PnP.PowerShell', '3.0', ['Biblioteca de Prompts e Skills']),
+        modulo('Microsoft.Graph.Identity.SignIns', '2.41.2', ['MFA para o Copilot'])
       ]
     },
     listarNavegadores: async () => [
@@ -87,8 +95,25 @@ function criarSimulador(): ApiInstalador {
         criar: { EstadoCopilotPremium: 'Existe (0 membro(s), 1 owner(s))', EstadoCopilotGeral: 'Existe (0 membro(s), 1 owner(s))' },
         ativar: { RoteamentoDepois: valores.QuemRotear === 'todos' ? 'Ligado, para makers novos e existentes' : 'Ligado, só para makers novos' }
       }
+      // Etapas do item de MFA (ids repetidos com outros itens)
+      const saidasMfa: Record<string, Record<string, string>> = {
+        consultar: {
+          Conta: 'admin@contoso.onmicrosoft.com',
+          TenantId: '00000000-0000-4000-8000-0000000000bb',
+          LicencaEntra: 'Encontrada',
+          PadroesSeguranca: 'Desligados',
+          EstadoPolitica: 'Não existe',
+          PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\MFA-Copilot'
+        },
+        criar: { EstadoPolitica: 'Modo de relatório (não exige MFA, só registra)', PolicyId: '00000000-0000-4000-8000-0000000000dd' },
+        estado: {
+          EstadoPolitica:
+            ({ habilitar: 'Ligada (exige MFA)', desabilitar: 'Desligada', excluir: 'Não existe' } as Record<string, string>)[valores.NovoEstado] ??
+            'Modo de relatório (não exige MFA, só registra)'
+        }
+      }
       return simular(
-        saidas[etapaId] ?? {},
+        (moduloId === 'mfa-copilot' ? saidasMfa[etapaId] : saidas[etapaId]) ?? {},
         token ? { proposito: token.proposito, navegador: navegadorId } : undefined,
         etapaId.endsWith('-kit')
       )

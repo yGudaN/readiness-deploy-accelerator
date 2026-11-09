@@ -144,15 +144,21 @@ function registrarIpc(): void {
     )
   })
 
-  ipcMain.handle('execucao:instalar-modulo-ps', (_e, nome: string) => {
-    if (!modulosPsDeclarados(listarModulos()).includes(nome)) {
-      throw new Error(`Modulo PowerShell nao declarado no catalogo: ${nome}`)
+  ipcMain.handle('execucao:instalar-modulo-ps', (_e, nomes: string[]) => {
+    const declarados = modulosPsDeclarados(listarModulos())
+    const lista = [...new Set(Array.isArray(nomes) ? nomes : [nomes])]
+    const invalidos = lista.filter((n) => !declarados.includes(n))
+    if (!lista.length || invalidos.length) {
+      throw new Error(`Modulo PowerShell nao declarado no catalogo: ${invalidos.join(', ')}`)
     }
-    const comando = [
-      `Write-Output 'Instalando ${nome} (pode levar alguns minutos)...'`,
-      `Install-Module -Name '${nome}' -Scope CurrentUser -Repository PSGallery -Force -AllowClobber -ErrorAction Stop`,
-      `Write-Output '${nome} instalado.'`
-    ].join('; ')
+    // Um modulo por vez, na ordem; para no primeiro erro
+    const comando = lista
+      .map((nome, i) => [
+        `Write-Output '(${i + 1}/${lista.length}) Instalando ${nome} (pode levar alguns minutos)...'`,
+        `Install-Module -Name '${nome}' -Scope CurrentUser -Repository PSGallery -Force -AllowClobber -ErrorAction Stop`,
+        `Write-Output '${nome} instalado.'`
+      ].join('; '))
+      .join('; ')
     return iniciarExecucao(['-Command', comando], {}, emitir)
   })
 

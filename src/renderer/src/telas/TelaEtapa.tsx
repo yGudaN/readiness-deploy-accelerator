@@ -5,6 +5,7 @@ import { BarraProgresso } from '../componentes/BarraProgresso'
 import { Campo } from '../componentes/Campo'
 import { CartaoLogin } from '../componentes/CartaoLogin'
 import { Log } from '../componentes/Log'
+import { Situacao } from '../componentes/Situacao'
 import { useNavegador } from '../navegador'
 import type { EstadoExecucao } from '../useExecucoes'
 
@@ -53,6 +54,7 @@ export function TelaEtapa(p: Props) {
       {etapa.aviso && aplicarModelo(etapa.aviso, valores).trim() && (
         <div className="cartao aviso-etapa">{aplicarModelo(etapa.aviso, valores)}</div>
       )}
+      {etapa.situacao && <Situacao def={etapa.situacao} valores={valores} />}
 
       {etapa.instrucoes && (
         <div className="cartao">

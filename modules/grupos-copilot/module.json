@@ -74,7 +74,13 @@
       "id": "criar",
       "titulo": "Criar os grupos",
       "descricao": "Cria os grupos que ainda não existem, como grupos de segurança sem e-mail e com a conta administrativa como owner. Grupo que já existe é mantido (não duplica). Se houver mais de um grupo com o mesmo nome, nada é alterado.",
-      "aviso": "Hoje: Copilot-Premium · {{EstadoCopilotPremium}} | Copilot-Geral · {{EstadoCopilotGeral}}",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Copilot-Premium", "valor": "{{EstadoCopilotPremium}}", "okQuando": ["Existe"], "alertaQuando": ["Duplicado"] },
+          { "rotulo": "Copilot-Geral", "valor": "{{EstadoCopilotGeral}}", "okQuando": ["Existe"], "alertaQuando": ["Duplicado"] }
+        ]
+      },
       "campos": [
         {
           "id": "GrupoAlvo",

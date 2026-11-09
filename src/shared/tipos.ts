@@ -70,6 +70,26 @@ export interface ScriptDef {
   tokens?: TokenDef[]
 }
 
+/** Linha do quadro "situacao atual" de uma etapa. */
+export interface ItemSituacaoDef {
+  rotulo: string
+  /** Aceita {{Campo}}. Se ficar vazio, a linha nao aparece. */
+  valor: string
+  /** Valores (inicio do texto, sem diferenciar maiusculas) mostrados como OK. */
+  okQuando?: string[]
+  /** Valores (inicio do texto) mostrados como alerta. */
+  alertaQuando?: string[]
+}
+
+/** Quadro com o estado atual do tenant, uma informacao por linha. */
+export interface SituacaoDef {
+  /** Padrao: "Situação atual". */
+  titulo?: string
+  itens: ItemSituacaoDef[]
+  /** Frase curta abaixo das linhas. Aceita {{Campo}}. */
+  nota?: string
+}
+
 export interface EtapaDef {
   id: string
   titulo: string
@@ -77,6 +97,8 @@ export interface EtapaDef {
   descricao?: string
   /** Destaque logo abaixo da descricao (ex.: estado atual). Aceita {{Campo}}; se ficar vazio, nao aparece. */
   aviso?: string
+  /** Estado atual em linhas (rotulo: valor). Preferivel ao aviso quando ha mais de uma informacao. */
+  situacao?: SituacaoDef
   /** Passo a passo exibido em lista numerada. Aceita {{Campo}}. */
   instrucoes?: string[]
   campos?: CampoDef[]
@@ -121,6 +143,8 @@ export interface StatusPreRequisito {
   acao?: { tipo: 'instalar-modulo'; nome: string } | { tipo: 'abrir-link'; url: string }
   /** Nomes dos modulos do catalogo que exigem este requisito. */
   exigidoPor: string[]
+  /** Pagina oficial do requisito (para baixar/instalar por conta propria). */
+  linkOficial?: string
 }
 
 export type NivelLog = 'info' | 'sucesso' | 'aviso' | 'erro' | 'discreto'
@@ -153,7 +177,8 @@ export interface ApiInstalador {
   listarNavegadores(): Promise<Navegador[]>
   /** Retorna o id da execucao; acompanhe por onEventoExecucao. Logins abrem no navegador informado. */
   executarScript(moduloId: string, etapaId: string, valores: Record<string, string>, navegadorId: string): Promise<string>
-  instalarModuloPs(nome: string): Promise<string>
+  /** Instala um ou mais modulos PowerShell (em sequencia, numa unica execucao). */
+  instalarModuloPs(nomes: string[]): Promise<string>
   cancelarExecucao(execucaoId: string): Promise<void>
   /** Abre de novo a pagina de login pendente de uma execucao, no navegador informado. */
   reabrirLogin(execucaoId: string, navegadorId: string): Promise<void>

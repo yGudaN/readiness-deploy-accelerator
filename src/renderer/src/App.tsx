@@ -193,6 +193,11 @@ export function App() {
     setMaxAlcancado(indice) // a lista de etapas mudou: refaz o caminho a partir daqui
   }
 
+  const selecionarTodos = (todos: boolean): void => {
+    setSelecionados(todos ? modulos.map((m) => m.id) : [])
+    setMaxAlcancado(indice)
+  }
+
   const executarEtapa = (modulo: ModuloManifesto, etapa: EtapaDef): void => {
     const chave = chaveEtapa(modulo.id, etapa.id)
     const v = valoresLimpos(valores[modulo.id] ?? {})
@@ -227,8 +232,8 @@ export function App() {
     setMaxAlcancado(1)
   }
 
-  const instalarModuloPs = (nome: string): void => {
-    void iniciar(CHAVE_INSTALACAO_PS, () => api.instalarModuloPs(nome), () => void verificar())
+  const instalarModuloPs = (nomes: string[]): void => {
+    void iniciar(CHAVE_INSTALACAO_PS, () => api.instalarModuloPs(nomes), () => void verificar())
   }
 
   const renderizarTela = () => {
@@ -251,6 +256,7 @@ export function App() {
             instalados={instalados}
             pendencias={pendenciasPorModulo}
             onAlternar={alternarModulo}
+            onSelecionarTodos={selecionarTodos}
           />
         )
       case 'conta': {
