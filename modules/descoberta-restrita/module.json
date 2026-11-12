@@ -1,0 +1,101 @@
+{
+  "id": "descoberta-restrita",
+  "nome": "Descoberta restrita no SharePoint",
+  "versao": "1.0.0",
+  "resumo": "Tira um site da pesquisa da organização e do Copilot, sem mudar permissões.",
+  "descricao": "A descoberta restrita de conteúdo (Restricted Content Discovery) faz um site deixar de aparecer na pesquisa da organização e nas respostas do Copilot para quem não usa o site, enquanto o conteúdo é revisado. As permissões não mudam: quem já tem acesso continua acessando normalmente. Este item lista todos os sites com o estado do recurso e liga ou desliga em um site escolhido. Exige o SharePoint Advanced Management (incluído no Microsoft 365 Copilot ou vendido à parte). Começa consultando o tenant e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Lista de todos os sites com o estado da descoberta restrita (somente leitura)",
+    "Ligar ou desligar a descoberta restrita em um site escolhido",
+    "Requer o SharePoint Advanced Management"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador Global, Administrador do SharePoint ou Administrador do SharePoint Advanced Management"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" },
+    { "tipo": "modulo-ps", "nome": "Microsoft.Online.SharePoint.PowerShell", "versaoMinima": "16.0.25409.0", "instalavel": true }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar os sites",
+      "descricao": "Somente leitura: confere a conta, a função e as licenças, e lista todos os sites (sem OneDrive) com o estado da descoberta restrita. Nada é alterado. Além do login do instalador, o SharePoint pede um login próprio no navegador padrão do Windows: use a mesma conta.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Sites.Read.All",
+            "proposito": "Conferir a conta, a função, as licenças e o endereço do SharePoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "site",
+      "titulo": "Ligar ou desligar em um site",
+      "descricao": "Liga ou desliga a descoberta restrita no site informado e confere o resultado. As permissões do site não mudam. A pesquisa e o Copilot levam um tempo para refletir a mudança. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Sites", "valor": "{{SitesRcd}}" },
+          { "rotulo": "Com descoberta restrita", "valor": "{{SitesRestritos}}" },
+          { "rotulo": "Licença do SharePoint Advanced Management ou Microsoft 365 Copilot", "valor": "{{LicencaSam}}", "okQuando": ["Encontrada"], "alertaQuando": ["Não encontrada"] },
+          { "rotulo": "Último site alterado", "valor": "{{EstadoSite}}" }
+        ],
+        "nota": "A lista completa, site a site, está no log da consulta e em sites-rcd.csv na pasta de evidências. Sem o SharePoint Advanced Management, o SharePoint recusa a alteração com o aviso \"Bloqueado\" e nada é alterado."
+      },
+      "campos": [
+        {
+          "id": "SiteUrl",
+          "rotulo": "Endereço do site",
+          "tipo": "url",
+          "placeholder": "https://empresa.sharepoint.com/sites/nome-do-site",
+          "ajuda": "Endereço completo do site, deste tenant. Sites pessoais do OneDrive não são aceitos."
+        },
+        {
+          "id": "AcaoRcd",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "ligar",
+          "opcoes": [
+            { "valor": "ligar", "rotulo": "Ligar a descoberta restrita", "descricao": "O site some da pesquisa da organização e do Copilot para quem não usa o site." },
+            { "valor": "desligar", "rotulo": "Desligar a descoberta restrita", "descricao": "O site volta a aparecer normalmente na pesquisa e no Copilot." }
+          ]
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-site.ps1",
+        "rotuloBotao": "Aplicar no site",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "SiteUrl", "AcaoRcd"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Sites.Read.All",
+            "proposito": "Conferir a conta, a função, as licenças e o endereço do SharePoint"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "SharePoint", "valor": "{{EnderecoSharePoint}}" },
+      { "rotulo": "Sites", "valor": "{{SitesRcd}}" },
+      { "rotulo": "Site alterado", "valor": "{{EstadoSite}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ]
+  }
+}

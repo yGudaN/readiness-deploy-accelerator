@@ -17,6 +17,14 @@ Decisões em aberto com o time do COE. Não fazem parte do instalador até serem
 
 **Observação:** o roteamento ficou ligado no tenant de demo (crm202149) depois do teste.
 
+## Descoberta restrita no SharePoint (AUTO-16): testar pelo instalador
+
+**Situação:** havia dois materiais do item; a base é o script (`originais/16-rcd-sharepoint.ps1`), mais completo. Do roteiro em Word (`originais/16-rcd-sharepoint-roteiro.docx`) veio a lista de todos os sites com o estado do recurso. Teste manual (12/11/2026, tenant de demo): consulta e lista de 13 sites funcionaram sem o SharePoint Advanced Management.
+
+**O que não foi testado:** ligar e desligar num site (fica para o teste pelo instalador, v1.4.0). Sem o SharePoint Advanced Management, espera-se que o SharePoint recuse; a mensagem exata da recusa ainda não foi vista. O instalador reconhece as recusas vistas no item de compartilhamento ("experimental feature", "not supported in the current environment") e menções a licença; se vier outra mensagem, ela aparece como erro comum e é preciso ajustar `Test-ErroSemSam`.
+
+**Diferença do original:** o módulo do SharePoint é importado direto no PowerShell 7 (o original usa `-UseWindowsPowerShell`).
+
 ## Modelo de proteção de dados (AUTO-20): testar pelo instalador
 
 **Situação:** validado no teste manual (12/11/2026, tenant de demo): consultar, criar (e não duplicar), habilitar, desabilitar e reverter os 5 objetos. O teste exigiu o Windows PowerShell 5.1 com o Exchange 3.10.0 (o 3.11.x conflita com o Graph 2.39 fixado pelo script) e uma correção no script original (`[AllowEmptyCollection()]` em `Get-Auto20State`, que parava com lista vazia), aplicada só na cópia de trabalho do teste.

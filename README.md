@@ -24,6 +24,10 @@ ReadinessDeployAccelerator/
 │   │   ├── module.json
 │   │   └── scripts/                            AlertasAtividade.psm1 (funções do script validado),
 │   │                                           01-consultar, 02-criar, 03-estado
+│   ├── descoberta-restrita/                    AUTO-16
+│   │   ├── module.json
+│   │   └── scripts/                            DescobertaRestrita.psm1 (funções do script validado +
+│   │                                           lista de sites do roteiro em Word), 01-consultar, 02-site
 │   ├── auditoria-copilot/                      AUTO-31
 │   │   ├── module.json
 │   │   └── scripts/                            AuditoriaCopilot.psm1 (funções do script validado),

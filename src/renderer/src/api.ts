@@ -148,6 +148,22 @@ function criarSimulador(): ApiInstalador {
         'mfa-copilot': saidasMfa,
         'sharepoint-compartilhamento': saidasSharePoint,
         'auditoria-copilot': saidasAuditoria,
+        'descoberta-restrita': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            EnderecoSharePoint: 'https://contoso.sharepoint.com',
+            SitesRcd: '13 sites · 0 com descoberta restrita',
+            SitesRestritos: 'Nenhum',
+            LicencaSam: 'Não encontrada',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Descoberta-Restrita'
+          },
+          site: {
+            EstadoSite: valores.AcaoRcd === 'desligar'
+              ? 'Projetos · Desligada (aparece normalmente na pesquisa e no Copilot)'
+              : 'Projetos · Ligada (fora da pesquisa da organização e do Copilot)'
+          }
+        },
         'modelo-protecao': {
           consultar: {
             Conta: 'admin@contoso.onmicrosoft.com',
