@@ -15,7 +15,7 @@ export function Situacao({ def, valores }: { def: SituacaoDef; valores: Record<s
     .map((i) => {
       const valor = aplicarModelo(i.valor, valores).trim()
       const tom: Tom = comeca(valor, i.alertaQuando) ? 'alerta' : comeca(valor, i.okQuando) ? 'ok' : 'neutro'
-      return { rotulo: i.rotulo, valor, tom }
+      return { rotulo: aplicarModelo(i.rotulo, valores).trim(), valor, tom }
     })
     .filter((l) => l.valor)
   if (!linhas.length) return null

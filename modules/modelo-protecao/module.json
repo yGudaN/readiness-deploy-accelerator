@@ -1,0 +1,216 @@
+{
+  "id": "modelo-protecao",
+  "nome": "Modelo de proteção de dados",
+  "versao": "1.0.0",
+  "resumo": "DLP, Acesso Condicional e rótulo de sensibilidade como ponto de partida.",
+  "descricao": "Cria um modelo inicial de proteção de dados para o Copilot, pronto para o time ajustar: uma política de DLP da Power Platform para os agentes, uma política de Acesso Condicional que exige MFA da conta administrativa, uma política de DLP do Microsoft Purview para o Exchange e um rótulo de sensibilidade \"Confidencial\" publicado para a conta administrativa. Tudo nasce sem efeito para os usuários: a DLP da Power Platform não bloqueia nenhum conector, o Acesso Condicional fica em modo de relatório e a DLP do Purview fica em teste, sem regras. Começa consultando o tenant, não duplica nada, só altera os objetos com os nomes do modelo e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "DLP da Power Platform para todos os ambientes, sem bloquear conectores",
+    "Acesso Condicional exigindo MFA da conta administrativa, em modo de relatório",
+    "DLP do Microsoft Purview para o Exchange, em teste e sem regras",
+    "Rótulo de sensibilidade \"Confidencial\" (sem criptografia) publicado para a conta administrativa",
+    "Opcional: ligar, desligar ou remover o modelo"
+  ],
+  "tempoEstimadoMin": 10,
+  "papeisNecessarios": [
+    "Administrador Global, ou: Administrador da Power Platform, Administrador de Acesso Condicional e as funções de DLP e Information Protection do Microsoft Purview"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" },
+    { "tipo": "modulo-ps", "nome": "ExchangeOnlineManagement", "versaoMinima": "3.8.0", "instalavel": true }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o tenant",
+      "descricao": "Somente leitura: confere a conta, as funções e as licenças, e procura os objetos do modelo na Power Platform, no Entra ID e no Microsoft Purview. Nada é alterado. Os logins usam a mesma conta (Microsoft Graph, Power Platform e Microsoft Purview); depois do primeiro, os outros costumam concluir sozinhos. Sem acesso ao Purview, a DLP do Purview e o rótulo ficam de fora e o resto continua.",
+      "campos": [
+        {
+          "id": "Prefixo",
+          "rotulo": "Prefixo dos nomes",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Modelo-Copilot",
+          "padraoRegex": "^[A-Za-z0-9][A-Za-z0-9-]{1,30}$",
+          "mensagemRegex": "Use de 2 a 31 letras sem acento, números ou hífen.",
+          "ajuda": "Os objetos se chamam <prefixo>-DLP-Agentes, <prefixo>-CA-MFA-Admin, <prefixo>-DLP-Copilot, <prefixo>-Confidencial e <prefixo>-Politica-Rotulos. Só objetos com esses nomes são alterados."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["Prefixo"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Policy.Read.All https://graph.microsoft.com/Policy.ReadWrite.ConditionalAccess https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory",
+            "proposito": "Conferir a conta e administrar o Acesso Condicional no Entra ID"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Administrar a DLP da Power Platform"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Conectar ao Microsoft Purview"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Administrar DLP e rótulos no Microsoft Purview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "criar",
+      "titulo": "Criar o modelo",
+      "descricao": "Cria o que falta do modelo, sem efeito para os usuários: DLP da Power Platform sem bloquear conectores, Acesso Condicional da conta {{Conta}} em modo de relatório, DLP do Purview em teste e o rótulo publicado só para a conta {{Conta}}. O que já existe com o mesmo nome não é alterado.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "DLP da Power Platform", "valor": "{{EstadoDlpPowerPlatform}}", "okQuando": ["Existe"] },
+          { "rotulo": "Acesso Condicional (MFA da conta admin)", "valor": "{{EstadoAcessoCondicional}}", "okQuando": ["Modo de relatório"], "alertaQuando": ["Ligada"] },
+          { "rotulo": "DLP do Microsoft Purview", "valor": "{{EstadoDlpPurview}}", "alertaQuando": ["Indisponível"] },
+          { "rotulo": "Rótulo de sensibilidade", "valor": "{{EstadoRotulo}}", "okQuando": ["Criado e publicado"], "alertaQuando": ["Indisponível"] },
+          { "rotulo": "Licença Microsoft Entra ID P1 ou P2", "valor": "{{LicencaEntra}}", "okQuando": ["Encontrada"], "alertaQuando": ["Não encontrada"] }
+        ],
+        "nota": "Sem licença Microsoft Entra ID P1 ou P2, o Acesso Condicional fica de fora. Sem acesso ao Microsoft Purview, a DLP do Purview e o rótulo ficam de fora. Nos dois casos, o resto é criado."
+      },
+      "script": {
+        "arquivo": "scripts/02-criar.ps1",
+        "rotuloBotao": "Criar o modelo",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "Prefixo"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Policy.Read.All https://graph.microsoft.com/Policy.ReadWrite.ConditionalAccess https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory",
+            "proposito": "Conferir a conta e administrar o Acesso Condicional no Entra ID"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Administrar a DLP da Power Platform"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Conectar ao Microsoft Purview"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Administrar DLP e rótulos no Microsoft Purview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "estado",
+      "titulo": "Ligar, desligar ou remover (opcional)",
+      "descricao": "Ligar faz o Acesso Condicional exigir MFA da conta {{Conta}} em todos os apps, liga a DLP do Purview (ainda sem regras) e publica o rótulo. Desligar desfaz isso. Remover apaga os objetos do modelo. Pode pular esta etapa e deixar o modelo sem efeito.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Acesso Condicional (MFA da conta admin)", "valor": "{{EstadoAcessoCondicional}}", "okQuando": ["Modo de relatório"], "alertaQuando": ["Ligada"] },
+          { "rotulo": "DLP do Microsoft Purview", "valor": "{{EstadoDlpPurview}}" },
+          { "rotulo": "Rótulo de sensibilidade", "valor": "{{EstadoRotulo}}" },
+          { "rotulo": "DLP da Power Platform", "valor": "{{EstadoDlpPowerPlatform}}" }
+        ],
+        "nota": "A DLP da Power Platform não tem estado ligado/desligado: ela só é criada ou removida."
+      },
+      "campos": [
+        {
+          "id": "AcaoModelo",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "desligar",
+          "opcoes": [
+            { "valor": "desligar", "rotulo": "Desligar", "descricao": "Acesso Condicional e DLP do Purview desligados e rótulo tirado da política. Os objetos continuam criados." },
+            { "valor": "ligar", "rotulo": "Ligar", "descricao": "A conta admin passa a precisar de MFA em todos os apps. Se ela não tiver MFA configurado, o próximo login pede para configurar. Exige confirmação." },
+            { "valor": "remover", "rotulo": "Remover o modelo", "descricao": "Apaga os objetos do modelo. O Purview pode levar alguns minutos para concluir. Exige confirmação." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoModelo",
+          "rotulo": "Confirmação (só para ligar ou remover)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para ligar ou remover o modelo, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-estado.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "Prefixo", "AcaoModelo", "ConfirmacaoModelo"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/Policy.Read.All https://graph.microsoft.com/Policy.ReadWrite.ConditionalAccess https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory",
+            "proposito": "Conferir a conta e administrar o Acesso Condicional no Entra ID"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Administrar a DLP da Power Platform"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Conectar ao Microsoft Purview"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Administrar DLP e rótulos no Microsoft Purview"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "DLP da Power Platform", "valor": "{{EstadoDlpPowerPlatform}}" },
+      { "rotulo": "Acesso Condicional", "valor": "{{EstadoAcessoCondicional}}" },
+      { "rotulo": "DLP do Microsoft Purview", "valor": "{{EstadoDlpPurview}}" },
+      { "rotulo": "Rótulo de sensibilidade", "valor": "{{EstadoRotulo}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir as políticas de dados da Power Platform", "url": "https://admin.powerplatform.microsoft.com" },
+      { "rotulo": "Abrir o Acesso Condicional", "url": "https://entra.microsoft.com/#view/Microsoft_AAD_ConditionalAccess/ConditionalAccessBlade/~/Policies" },
+      { "rotulo": "Abrir o Microsoft Purview", "url": "https://purview.microsoft.com" }
+    ]
+  }
+}

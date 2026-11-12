@@ -72,6 +72,7 @@ export interface ScriptDef {
 
 /** Linha do quadro "situacao atual" de uma etapa. */
 export interface ItemSituacaoDef {
+  /** Aceita {{Campo}}. */
   rotulo: string
   /** Aceita {{Campo}}. Se ficar vazio, a linha nao aparece. */
   valor: string

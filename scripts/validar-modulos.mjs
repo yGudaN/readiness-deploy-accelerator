@@ -68,7 +68,7 @@ for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
       for (const t of etapa.script.tokens ?? []) {
         for (const chave of ['nome', 'clientId', 'tenant', 'escopo', 'proposito']) if (!t[chave]) erro(`etapa ${etapa.id}: token sem "${chave}"`)
         if (t.clientId && !/^(@[a-z-]+|\{\{\s*\w+\s*\}\}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(t.clientId)) {
-          erro(`etapa ${etapa.id}: clientId "${t.clientId}" deve ser um GUID, {{Campo}} ou cliente conhecido (@azure-powershell, @power-platform-cli, @graph-cli)`)
+          erro(`etapa ${etapa.id}: clientId "${t.clientId}" deve ser um GUID, {{Campo}} ou cliente conhecido (@azure-powershell, @power-platform-cli, @graph-cli, @exchange-online)`)
         }
         // O token pode ser lido no proprio script ou num .psm1 auxiliar do item
         const auxiliares = existsSync(join(base, 'scripts'))

@@ -17,6 +17,30 @@ Decisões em aberto com o time do COE. Não fazem parte do instalador até serem
 
 **Observação:** o roteamento ficou ligado no tenant de demo (crm202149) depois do teste.
 
+## Modelo de proteção de dados (AUTO-20): testar pelo instalador
+
+**Situação:** validado no teste manual (12/11/2026, tenant de demo): consultar, criar (e não duplicar), habilitar, desabilitar e reverter os 5 objetos. O teste exigiu o Windows PowerShell 5.1 com o Exchange 3.10.0 (o 3.11.x conflita com o Graph 2.39 fixado pelo script) e uma correção no script original (`[AllowEmptyCollection()]` em `Get-Auto20State`, que parava com lista vazia), aplicada só na cópia de trabalho do teste.
+
+**Para avisar quem escreveu o script:** a lista vazia e o "already published" ao habilitar (o rótulo já nasce publicado, e o script conta isso como falha).
+
+**O que não foi testado:** o item pelo instalador (v1.3.0). Ele roda no PowerShell 7: a DLP da Power Platform vai direto pela API que o módulo usa (`PowerPlatform.Governance/v1/policies`), o Acesso Condicional pela API do Graph e o Purview por `Connect-IPPSSession -AccessToken`.
+
+**Observação do teste:** depois de reverter, o Purview ainda listava a DLP e o rótulo por alguns minutos; a política de rótulos sumiu sozinha depois de ficar sem rótulos.
+
+## Alertas de atividade incomum (AUTO-30): testar pelo instalador
+
+**Situação:** validado no teste manual (11/11/2026, tenant de demo): consulta, criar a política simples (sem duplicar), desligar, religar, criar a anômala e remover as duas.
+
+**O que não foi testado:** o item pelo instalador (v1.2.0). A marca "Criada pelo Readiness Deploy Accelerator" vai na descrição e no comentário da política, porque no teste o Purview gravou às vezes a descrição no lugar do comentário; só políticas com a marca podem ser ligadas, desligadas ou removidas.
+
+## Auditoria do Copilot (AUTO-31)
+
+**Situação:** validado no teste manual (11/11/2026) e pelo instalador (v1.1.1, tenant de demo): logins do Exchange Online e do Security & Compliance, consulta, ligar a auditoria e criar a política de retenção. No teste manual, desligar e religar mostrou que a Microsoft demora para religar; o instalador trata isso como "Ligando (pode levar até 60 min)".
+
+**Observação:** uma política removida pode continuar reservando a prioridade por um tempo, mesmo sumindo do portal. A etapa avisa e sugere uma prioridade livre.
+
+**Não testado pelo instalador:** remover a política de retenção.
+
 ## Excesso de compartilhamento no SharePoint (AUTO-34): testar com SharePoint Advanced Management
 
 **Situação:** o item está no instalador desde a v0.8.0. A consulta foi validada no teste manual (09/11/2026: 14 sites, sem erro) e pelo instalador na v0.8.1, incluindo o login próprio do SharePoint no navegador padrão.

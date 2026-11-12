@@ -1,0 +1,240 @@
+{
+  "id": "auditoria-copilot",
+  "nome": "Auditoria do Copilot",
+  "versao": "1.0.0",
+  "resumo": "Confere a auditoria do Microsoft 365 e guarda o registro de uso do Copilot.",
+  "descricao": "Cada uso do Copilot gera um registro no log de auditoria do Microsoft 365 (quem usou, quando e em qual aplicativo), desde que a auditoria esteja ligada. Este item confere se a auditoria está ligada, conta os registros do Copilot do período escolhido e lista as políticas de retenção de auditoria. Se precisar, liga a auditoria e cria uma política que guarda os registros do Copilot por mais tempo. O conteúdo das conversas (perguntas, respostas e arquivos) não é lido nem exportado. A consulta não altera nada e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta da auditoria e dos registros de uso do Copilot (somente leitura)",
+    "Opcional: ligar a auditoria do Microsoft 365, se estiver desligada",
+    "Opcional: política de retenção que guarda os registros do Copilot por até 12 meses (exige licença com auditoria premium, como Microsoft 365 E5)"
+  ],
+  "tempoEstimadoMin": 10,
+  "papeisNecessarios": [
+    "Administrador Global, ou as funções Audit Logs (consultar e ligar a auditoria) e Organization Configuration (política de retenção)"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" },
+    { "tipo": "modulo-ps", "nome": "ExchangeOnlineManagement", "versaoMinima": "3.8.0", "instalavel": true }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar a auditoria",
+      "descricao": "Somente leitura: confere a conta e a licença, se a auditoria está ligada, as políticas de retenção de auditoria e quantos registros de uso do Copilot existem no período. Nada é alterado. São três logins da mesma conta (Microsoft Graph, Exchange Online e Microsoft Purview); depois do primeiro, os outros costumam concluir sozinhos.",
+      "campos": [
+        {
+          "id": "DiasPesquisa",
+          "rotulo": "Período da pesquisa de registros do Copilot",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "7",
+          "opcoes": [
+            { "valor": "7", "rotulo": "Últimos 7 dias" },
+            { "valor": "30", "rotulo": "Últimos 30 dias" },
+            { "valor": "90", "rotulo": "Últimos 90 dias", "descricao": "Pode levar alguns minutos em tenants com muito uso." },
+            { "valor": "180", "rotulo": "Últimos 180 dias", "descricao": "Só traz o que ainda está guardado; pode levar vários minutos." }
+          ]
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["DiasPesquisa"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All",
+            "proposito": "Conferir a conta e as licenças"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Ler e configurar a auditoria no Exchange Online"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Ler e configurar as políticas de retenção no Microsoft Purview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "auditoria",
+      "titulo": "Ligar a auditoria",
+      "descricao": "Sem a auditoria ligada, o uso do Copilot não fica registrado. Se ela já estiver ligada, nada é alterado. Depois de ligar, a Microsoft pode levar até 60 minutos para começar a registrar.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Auditoria do Microsoft 365", "valor": "{{Auditoria}}", "okQuando": ["Ligada"], "alertaQuando": ["Desligada"] },
+          { "rotulo": "Registros do Copilot", "valor": "{{EventosCopilot}}" }
+        ]
+      },
+      "campos": [
+        {
+          "id": "AcaoAuditoria",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "ligar",
+          "opcoes": [
+            { "valor": "ligar", "rotulo": "Ligar a auditoria", "descricao": "Recomendado. Se já estiver ligada, nada muda." },
+            { "valor": "desligar", "rotulo": "Desligar a auditoria", "descricao": "Para de registrar tudo no log de auditoria do tenant, não só o Copilot. Exige confirmação." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoRisco",
+          "rotulo": "Confirmação (só para desligar)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para desligar a auditoria, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-auditoria.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "AcaoAuditoria", "ConfirmacaoRisco"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All",
+            "proposito": "Conferir a conta e as licenças"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Ler e configurar a auditoria no Exchange Online"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Ler e configurar as políticas de retenção no Microsoft Purview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "retencao",
+      "titulo": "Política de retenção dos registros do Copilot (opcional)",
+      "descricao": "Por padrão, os registros de auditoria ficam guardados por 180 dias. Esta política guarda os registros do Copilot por mais tempo. Se a política já existir com os mesmos valores, nada é alterado. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Política dos registros do Copilot", "valor": "{{PoliticaCopilot}}", "alertaQuando": ["Não existe"] },
+          { "rotulo": "Licença com auditoria premium", "valor": "{{LicencaAuditoria}}", "okQuando": ["Encontrada"], "alertaQuando": ["Não encontrada"] },
+          { "rotulo": "Políticas de retenção de auditoria no tenant", "valor": "{{PoliticasRetencao}}" }
+        ],
+        "nota": "Sem licença com auditoria premium (ex.: Microsoft 365 E5 ou Office 365 E5), a política não é criada e nada é alterado."
+      },
+      "campos": [
+        {
+          "id": "AcaoRetencao",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "aplicar",
+          "opcoes": [
+            { "valor": "aplicar", "rotulo": "Criar ou atualizar a política", "descricao": "Cria a política com os valores abaixo ou atualiza a que já existe com este nome." },
+            { "valor": "remover", "rotulo": "Remover a política", "descricao": "Os registros voltam ao prazo padrão. Exige confirmação." }
+          ]
+        },
+        {
+          "id": "NomePolitica",
+          "rotulo": "Nome da política",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Retencao-Auditoria-Copilot",
+          "padraoRegex": "^[\\w .-]{1,64}$",
+          "mensagemRegex": "Use letras sem acento, números, espaço, ponto, hífen ou sublinhado (até 64)."
+        },
+        {
+          "id": "DuracaoRetencao",
+          "rotulo": "Por quanto tempo guardar",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "TwelveMonths",
+          "opcoes": [
+            { "valor": "ThreeMonths", "rotulo": "3 meses" },
+            { "valor": "SixMonths", "rotulo": "6 meses" },
+            { "valor": "NineMonths", "rotulo": "9 meses" },
+            { "valor": "TwelveMonths", "rotulo": "12 meses", "descricao": "Recomendado." },
+            { "valor": "TenYears", "rotulo": "10 anos", "descricao": "Exige o complemento de retenção de auditoria de 10 anos." }
+          ]
+        },
+        {
+          "id": "Prioridade",
+          "rotulo": "Prioridade",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "100",
+          "padraoRegex": "^([1-9]\\d{0,3}|10000)$",
+          "mensagemRegex": "Use um número de 1 a 10000.",
+          "ajuda": "Quando mais de uma política vale para o mesmo registro, vence a de menor número."
+        },
+        {
+          "id": "ConfirmacaoRetencao",
+          "rotulo": "Confirmação (só para remover)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para remover a política, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-retencao.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "AcaoRetencao", "NomePolitica", "DuracaoRetencao", "Prioridade", "ConfirmacaoRetencao"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All",
+            "proposito": "Conferir a conta e as licenças"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Ler e configurar a auditoria no Exchange Online"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Ler e configurar as políticas de retenção no Microsoft Purview"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Auditoria", "valor": "{{Auditoria}}" },
+      { "rotulo": "Registros do Copilot", "valor": "{{EventosCopilot}}" },
+      { "rotulo": "Política dos registros do Copilot", "valor": "{{PoliticaCopilot}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir o Microsoft Purview (Soluções > Auditoria)", "url": "https://purview.microsoft.com" }
+    ]
+  }
+}

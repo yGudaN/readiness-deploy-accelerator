@@ -50,8 +50,13 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
         </span>
       </div>
 
-      <ul className="catalogo-lista">
-        {modulos.map((m) => {
+      {/* Duas colunas independentes (pares e impares): abrir um card nao estica o vizinho. Em janela
+          estreita as colunas somem (display: contents) e "order" devolve a ordem original. */}
+      <div className="catalogo-lista">
+        {[0, 1].map((coluna) => (
+        <ul key={coluna} className="catalogo-coluna">
+        {modulos.map((m, i) => {
+          if (i % 2 !== coluna) return null
           const selecionado = selecionados.includes(m.id)
           const expandido = expandidos.includes(m.id)
           const pendente = pendencias[m.id] ?? []
@@ -61,7 +66,7 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
             ? (m.dependeDe ?? []).filter((d) => !selecionados.includes(d.id) && !instalados.includes(d.id))
             : []
           return (
-            <li key={m.id} className={`item-lista${selecionado ? ' item-lista--selecionado' : ''}${expandido ? ' item-lista--expandido' : ''}`}>
+            <li key={m.id} style={{ order: i }} className={`item-lista${selecionado ? ' item-lista--selecionado' : ''}${expandido ? ' item-lista--expandido' : ''}`}>
               <div className="item-lista__linha">
                 <label className="item-lista__selecao">
                   <input type="checkbox" checked={selecionado} onChange={() => onAlternar(m.id)} aria-label={`Instalar ${m.nome}`} />
@@ -132,7 +137,9 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
             </li>
           )
         })}
-      </ul>
+        </ul>
+        ))}
+      </div>
       <p className="catalogo-rodape">Outras soluções do COE Bizapp vão aparecer aqui.</p>
     </>
   )

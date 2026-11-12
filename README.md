@@ -20,6 +20,14 @@ Electron (telas em React)  ──IPC──▶  processo principal  ──spawn�
 ```
 ReadinessDeployAccelerator/
 ├── modules/
+│   ├── alertas-atividade/                      AUTO-30
+│   │   ├── module.json
+│   │   └── scripts/                            AlertasAtividade.psm1 (funções do script validado),
+│   │                                           01-consultar, 02-criar, 03-estado
+│   ├── auditoria-copilot/                      AUTO-31
+│   │   ├── module.json
+│   │   └── scripts/                            AuditoriaCopilot.psm1 (funções do script validado),
+│   │                                           01-consultar, 02-auditoria, 03-retencao
 │   ├── _compartilhado/
 │   │   ├── BizappInstalador.psm1               funções que os scripts usam para falar com o app (log, saídas,
 │   │   │                                       progresso, tokens, contexto e pacote de evidências)
@@ -45,6 +53,11 @@ ReadinessDeployAccelerator/
 │   │   ├── module.json
 │   │   └── scripts/                            MfaCopilot.psm1 (funções do script validado),
 │   │                                           01-consultar, 02-criar-relatorio, 03-mudar-estado
+│   ├── modelo-protecao/                        AUTO-20
+│   │   ├── module.json
+│   │   └── scripts/                            ModeloProtecao.psm1 (funções do script validado; DLP da
+│   │                                           Power Platform pela API, sem o módulo do Windows PowerShell 5.1),
+│   │                                           01-consultar, 02-criar, 03-estado
 │   └── sharepoint-compartilhamento/            AUTO-34
 │       ├── module.json
 │       └── scripts/                            SharePointCompartilhamento.psm1 (funções do script validado),
@@ -117,6 +130,8 @@ Regera `build/icon.png` (ícone do app e do instalador, fundo transparente) a pa
      Antes de existir um app no tenant, use um app público da Microsoft:
      - `"@azure-powershell"`: Microsoft Graph (o mesmo que o PnP.PowerShell usa para registrar apps);
      - `"@power-platform-cli"`: Dataverse (o mesmo do `pac`), com `"tenant": "organizations"` e `"escopo": "{{EnvironmentUrl}}/.default"`.
+     - `"@graph-cli"`: Microsoft Graph (o mesmo do `Connect-MgGraph`), para os itens de identidade.
+     - `"@exchange-online"`: Exchange Online (`"escopo": "https://outlook.office365.com/.default"`) e Security & Compliance (`"https://ps.compliance.protection.outlook.com/.default"`), entregues ao `Connect-ExchangeOnline` / `Connect-IPPSSession -AccessToken` (módulo 3.8 ou superior).
 
      Com `"tenant": "organizations"` a pessoa sempre escolhe a conta no login, porque o ambiente pode ser de outro cliente.
 3. Escreva os scripts seguindo o contrato abaixo.

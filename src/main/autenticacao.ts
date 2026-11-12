@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import { SIMBOLO_BIZAPP_BRANCO_PNG } from './simboloBizapp'
 
 /**
  * Login Microsoft (Entra ID) feito pelo proprio instalador: fluxo authorization code + PKCE
@@ -16,7 +17,10 @@ const CLIENTES_CONHECIDOS: Record<string, string> = {
   // App publico do Power Platform CLI (pac), feito para acessar o Dataverse
   '@power-platform-cli': '9cee029c-6210-4654-90bb-17e6e9d36617',
   // Microsoft Graph Command Line Tools: o mesmo do Connect-MgGraph usado nos scripts validados
-  '@graph-cli': '14d82eec-204b-4c2f-b7e8-296a70dab67e'
+  '@graph-cli': '14d82eec-204b-4c2f-b7e8-296a70dab67e',
+  // Exchange Online PowerShell (Connect-ExchangeOnline / Connect-IPPSSession): o mesmo app que o
+  // modulo usa no login pelo navegador (-DisableWAM), que retorna em http://localhost
+  '@exchange-online': 'fb78d390-0c51-40cd-8e17-fdbfab77341b'
 }
 
 /** Tenants genericos: a conta e escolhida no login, entao nao ha "ultima conta" para sugerir. */
@@ -163,8 +167,9 @@ function contaSugerida(p: PedidoToken): string | undefined {
 const PAGINA_RETORNO = (titulo: string, texto: string): string => `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Readiness Deploy Accelerator</title>
 <style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#06010a;color:#fff;font-family:Inter,'Segoe UI',Arial,sans-serif;letter-spacing:-.02em}
 main{max-width:460px;padding:40px;border-radius:20px;background:#141018;text-align:center}h1{font-weight:600;letter-spacing:-.04em;margin:0 0 12px}
-p{color:rgba(255,255,255,.75);margin:0}.marca{display:inline-block;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#8034ae,#cb61e8);margin-bottom:20px}</style>
-<main><span class="marca"></span><h1>${titulo}</h1><p>${texto}</p></main></html>`
+p{color:rgba(255,255,255,.75);margin:0}.marca{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#8034ae,#cb61e8);margin-bottom:20px}
+.marca img{width:20px;height:auto;display:block}</style>
+<main><span class="marca"><img src="data:image/png;base64,${SIMBOLO_BIZAPP_BRANCO_PNG}" alt="Bizapp"></span><h1>${titulo}</h1><p>${texto}</p></main></html>`
 
 /** Servidor local que recebe o redirecionamento do login (127.0.0.1 e ::1, porta livre). */
 async function iniciarRetorno(estado: string): Promise<{ porta: number; resultado: Promise<URLSearchParams>; fechar: () => void }> {

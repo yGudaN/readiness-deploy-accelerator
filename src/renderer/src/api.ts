@@ -127,7 +127,70 @@ function criarSimulador(): ApiInstalador {
         },
         site: { CompartilhamentoSite: 'Projetos · Somente convidados existentes' }
       }
-      const porModulo: Record<string, Record<string, Record<string, string>>> = { 'mfa-copilot': saidasMfa, 'sharepoint-compartilhamento': saidasSharePoint }
+      // Item de auditoria: auditoria ligada, sem politica do Copilot ainda
+      const saidasAuditoria: Record<string, Record<string, string>> = {
+        consultar: {
+          Conta: 'admin@contoso.onmicrosoft.com',
+          TenantId: '00000000-0000-4000-8000-0000000000bb',
+          Auditoria: 'Ligada',
+          LicencaAuditoria: 'Encontrada',
+          PoliticaCopilot: 'Não existe',
+          PoliticasRetencao: '0',
+          EventosCopilot: `0 nos últimos ${valores.DiasPesquisa ?? '7'} dias`,
+          PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Auditoria-Copilot'
+        },
+        auditoria: { Auditoria: valores.AcaoAuditoria === 'desligar' ? 'Desligada' : 'Ligada' },
+        retencao: valores.AcaoRetencao === 'remover'
+          ? { PoliticaCopilot: 'Não existe', PoliticasRetencao: '0' }
+          : { PoliticaCopilot: `${({ ThreeMonths: '3 meses', SixMonths: '6 meses', NineMonths: '9 meses', TwelveMonths: '12 meses', TenYears: '10 anos' } as Record<string, string>)[valores.DuracaoRetencao] ?? '12 meses'} · prioridade ${valores.Prioridade ?? '100'}`, PoliticasRetencao: '1' }
+      }
+      const porModulo: Record<string, Record<string, Record<string, string>>> = {
+        'mfa-copilot': saidasMfa,
+        'sharepoint-compartilhamento': saidasSharePoint,
+        'auditoria-copilot': saidasAuditoria,
+        'modelo-protecao': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            LicencaEntra: 'Encontrada',
+            Purview: 'Conectado',
+            EstadoDlpPowerPlatform: 'Não existe',
+            EstadoAcessoCondicional: 'Não existe',
+            EstadoDlpPurview: 'Não existe',
+            EstadoRotulo: 'Não existe',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Modelo-Protecao'
+          },
+          criar: {
+            EstadoDlpPowerPlatform: 'Existe (todos os ambientes)',
+            EstadoAcessoCondicional: 'Modo de relatório (não exige MFA)',
+            EstadoDlpPurview: 'Em teste (sem notificações)',
+            EstadoRotulo: 'Criado e publicado para a conta admin'
+          },
+          estado: valores.AcaoModelo === 'remover'
+            ? { EstadoDlpPowerPlatform: 'Não existe', EstadoAcessoCondicional: 'Não existe', EstadoDlpPurview: 'Não existe', EstadoRotulo: 'Não existe' }
+            : valores.AcaoModelo === 'ligar'
+              ? { EstadoAcessoCondicional: 'Ligada (exige MFA da conta admin)', EstadoDlpPurview: 'Ligada', EstadoRotulo: 'Criado e publicado para a conta admin' }
+              : { EstadoAcessoCondicional: 'Desligada', EstadoDlpPurview: 'Desligada', EstadoRotulo: 'Criado, não publicado' }
+        },
+        'alertas-atividade': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            LicencaAlertas: 'Encontrada',
+            PoliticasAlerta: '34 (2 personalizadas)',
+            AlertasDoItem: 'Nenhuma',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Alertas-Atividade'
+          },
+          criar: {
+            EstadoAlerta: valores.TipoAlerta === 'simples'
+              ? `Ligada · volume (${valores.Limite ?? '50'} em ${valores.Janela ?? '120'} min)`
+              : 'Ligada · atividade incomum'
+          },
+          estado: {
+            EstadoAlerta: ({ desligar: 'Desligada · atividade incomum', ligar: 'Ligada · atividade incomum', remover: 'Não existe' } as Record<string, string>)[valores.NovoEstado] ?? ''
+          }
+        }
+      }
       return simular(
         (porModulo[moduloId] ?? saidas)[etapaId] ?? {},
         token ? { proposito: token.proposito, navegador: navegadorId } : undefined,

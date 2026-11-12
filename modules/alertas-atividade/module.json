@@ -1,0 +1,230 @@
+{
+  "id": "alertas-atividade",
+  "nome": "Alertas de atividade incomum",
+  "versao": "1.0.0",
+  "resumo": "Política de alerta no Microsoft Purview para atividade fora do padrão.",
+  "descricao": "Cria no Microsoft Purview uma política de alerta que avisa por e-mail quando um usuário faz uma atividade fora do normal. Por padrão, a atividade é a exclusão de pesquisas de conteúdo (eDiscovery), um sinal comum de tentativa de apagar rastros. Há dois tipos: atividade incomum, em que a Microsoft aprende o padrão de cada usuário e alerta quando ele foge desse padrão, e volume, que alerta quando o mesmo usuário passa de uma quantidade num intervalo. Começa consultando o tenant, não duplica a política, nunca altera as políticas padrão da Microsoft e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Uma política de alerta de atividade no Microsoft Purview, ligada, que notifica por e-mail",
+    "Opcional: desligar, religar ou remover a política criada",
+    "Requer licença com alertas avançados, como Microsoft 365 E5 ou Office 365 E5"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador Global, ou as funções Manage Alerts ou Organization Configuration no Microsoft Purview"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" },
+    { "tipo": "modulo-ps", "nome": "ExchangeOnlineManagement", "versaoMinima": "3.8.0", "instalavel": true }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar as políticas de alerta",
+      "descricao": "Somente leitura: confere a conta, as funções e a licença, e lista as políticas de alerta do tenant, incluindo as já criadas por este item. Nada é alterado. Os logins usam a mesma conta (Microsoft Graph e Microsoft Purview); depois do primeiro, os outros costumam concluir sozinhos.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory",
+            "proposito": "Conferir a conta, as funções e as licenças"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Conectar ao Microsoft Purview"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Ler e configurar as políticas de alerta no Microsoft Purview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "criar",
+      "titulo": "Criar a política de alerta",
+      "descricao": "Cria a política ligada, com severidade média, notificando o e-mail informado. Se já existir uma política deste item com o mesmo nome, nada é alterado.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Licença com alertas avançados", "valor": "{{LicencaAlertas}}", "okQuando": ["Encontrada"], "alertaQuando": ["Não encontrada"] },
+          { "rotulo": "Políticas de alerta no tenant", "valor": "{{PoliticasAlerta}}" },
+          { "rotulo": "Criadas por este item", "valor": "{{AlertasDoItem}}" }
+        ],
+        "nota": "Sem licença com alertas avançados (ex.: Microsoft 365 E5 ou Office 365 E5), a política não é criada e nada é alterado."
+      },
+      "campos": [
+        {
+          "id": "TipoAlerta",
+          "rotulo": "Quando alertar",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "anomala",
+          "opcoes": [
+            { "valor": "anomala", "rotulo": "Atividade incomum", "descricao": "Recomendado. A Microsoft aprende o padrão de cada usuário e alerta quando ele foge desse padrão. Leva até 7 dias para começar a alertar." },
+            { "valor": "simples", "rotulo": "Volume acima de um limite", "descricao": "Alerta quando o mesmo usuário repete a atividade a quantidade de vezes abaixo dentro da janela de tempo. Começa a valer na hora." }
+          ]
+        },
+        {
+          "id": "NomeAlerta",
+          "rotulo": "Nome da política",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Alerta-Atividade-Incomum-Pesquisas",
+          "padraoRegex": "^[A-Za-z0-9._ -]{3,64}$",
+          "mensagemRegex": "Use letras sem acento, números, espaço, ponto, hífen ou sublinhado (3 a 64)."
+        },
+        {
+          "id": "Operacao",
+          "rotulo": "Atividade monitorada",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "SearchRemoved",
+          "padraoRegex": "^[A-Za-z0-9-]{2,80}$",
+          "mensagemRegex": "Use o nome da atividade como aparece no log de auditoria, sem espaços.",
+          "ajuda": "Nome da atividade no log de auditoria. O padrão, SearchRemoved, é a exclusão de uma pesquisa de conteúdo (eDiscovery)."
+        },
+        {
+          "id": "NotificarConta",
+          "rotulo": "E-mail que recebe os alertas",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "{{Conta}}",
+          "padraoRegex": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+          "mensagemRegex": "Informe um e-mail."
+        },
+        {
+          "id": "Limite",
+          "rotulo": "Quantidade (só para volume)",
+          "tipo": "texto",
+          "padrao": "50",
+          "padraoRegex": "^([3-9]|[1-9]\\d{1,5})$",
+          "mensagemRegex": "Use um número a partir de 3.",
+          "ajuda": "Quantas vezes o mesmo usuário precisa repetir a atividade dentro da janela para gerar o alerta."
+        },
+        {
+          "id": "Janela",
+          "rotulo": "Janela em minutos (só para volume)",
+          "tipo": "texto",
+          "padrao": "120",
+          "padraoRegex": "^(6[1-9]|[7-9]\\d|[1-9]\\d{2,4})$",
+          "mensagemRegex": "Use 61 minutos ou mais."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-criar.ps1",
+        "rotuloBotao": "Criar a política",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "TipoAlerta", "NomeAlerta", "Operacao", "NotificarConta", "Limite", "Janela"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory",
+            "proposito": "Conferir a conta, as funções e as licenças"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Conectar ao Microsoft Purview"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Ler e configurar as políticas de alerta no Microsoft Purview"
+          }
+        ]
+      }
+    },
+    {
+      "id": "estado",
+      "titulo": "Desligar, religar ou remover (opcional)",
+      "descricao": "Só vale para a política criada por este item, com o nome da etapa anterior. Pode pular esta etapa e deixar a política ligada.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Política {{NomeAlerta}}", "valor": "{{EstadoAlerta}}", "alertaQuando": ["Não existe"] }
+        ]
+      },
+      "campos": [
+        {
+          "id": "NovoEstado",
+          "rotulo": "O que fazer com a política",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "desligar",
+          "opcoes": [
+            { "valor": "desligar", "rotulo": "Desligar", "descricao": "A política continua criada, mas não gera alertas." },
+            { "valor": "ligar", "rotulo": "Ligar", "descricao": "Volta a gerar alertas." },
+            { "valor": "remover", "rotulo": "Remover a política", "descricao": "Apaga a política do tenant. Exige confirmação." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoRemocao",
+          "rotulo": "Confirmação (só para remover)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para remover a política, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-estado.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "NomeAlerta", "NovoEstado", "ConfirmacaoRemocao"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/User.Read.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory",
+            "proposito": "Conferir a conta, as funções e as licenças"
+          },
+          {
+            "nome": "Exchange",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://outlook.office365.com/.default",
+            "proposito": "Conectar ao Microsoft Purview"
+          },
+          {
+            "nome": "Purview",
+            "clientId": "@exchange-online",
+            "tenant": "organizations",
+            "escopo": "https://ps.compliance.protection.outlook.com/.default",
+            "proposito": "Ler e configurar as políticas de alerta no Microsoft Purview"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Política", "valor": "{{NomeAlerta}}" },
+      { "rotulo": "Situação", "valor": "{{EstadoAlerta}}" },
+      { "rotulo": "Alertas enviados para", "valor": "{{NotificarConta}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir o Microsoft Purview (busque \"Políticas de alerta\")", "url": "https://purview.microsoft.com" }
+    ]
+  }
+}
