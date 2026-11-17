@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ModuloManifesto } from '@shared/tipos'
+import { CATEGORIAS, type ModuloManifesto } from '@shared/tipos'
 
 interface Props {
   modulos: ModuloManifesto[]
@@ -25,6 +25,11 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
   const marcados = modulos.filter((m) => selecionados.includes(m.id)).length
   const todos = modulos.length > 0 && marcados === modulos.length
   const alguns = marcados > 0 && !todos
+  // Grupos na ordem do checklist do COE; itens sem categoria vao para "Outros", no fim
+  const grupos = [
+    ...CATEGORIAS.map((c) => ({ titulo: c as string, itens: modulos.filter((m) => m.categoria === c) })),
+    { titulo: 'Outros', itens: modulos.filter((m) => !m.categoria || !(CATEGORIAS as readonly string[]).includes(m.categoria)) }
+  ].filter((g) => g.itens.length > 0)
 
   return (
     <>
@@ -52,10 +57,13 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
 
       {/* Duas colunas independentes (pares e impares): abrir um card nao estica o vizinho. Em janela
           estreita as colunas somem (display: contents) e "order" devolve a ordem original. */}
+      {grupos.map((grupo) => (
+      <section key={grupo.titulo} className="catalogo-grupo" aria-label={grupo.titulo}>
+      <h2 className="catalogo-grupo__titulo">{grupo.titulo}</h2>
       <div className="catalogo-lista">
         {[0, 1].map((coluna) => (
         <ul key={coluna} className="catalogo-coluna">
-        {modulos.map((m, i) => {
+        {grupo.itens.map((m, i) => {
           if (i % 2 !== coluna) return null
           const selecionado = selecionados.includes(m.id)
           const expandido = expandidos.includes(m.id)
@@ -140,6 +148,8 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
         </ul>
         ))}
       </div>
+      </section>
+      ))}
       <p className="catalogo-rodape">Outras soluções do COE Bizapp vão aparecer aqui.</p>
     </>
   )

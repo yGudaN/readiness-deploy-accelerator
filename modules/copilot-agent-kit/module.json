@@ -2,6 +2,7 @@
   "id": "copilot-agent-kit",
   "nome": "Copilot Agent Kit",
   "versao": "1.0.0",
+  "categoria": "Agentes e ALM",
   "resumo": "Kit oficial da Microsoft (Power CAT) para testar, analisar e governar agentes do Copilot Studio.",
   "descricao": "Conjunto de apps no Power Platform para quem cria e administra agentes: testes automatizados de conversas, indicadores de uso e qualidade, inventário de agentes do tenant, revisão de agentes e hub de conformidade. Ajuda a equipe de governança a acompanhar a qualidade e a governança dos agentes publicados.",
   "tempoEstimadoMin": 45,

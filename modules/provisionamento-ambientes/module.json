@@ -1,0 +1,415 @@
+{
+  "id": "provisionamento-ambientes",
+  "nome": "Ambientes DEV, HML e PROD",
+  "versao": "1.0.0",
+  "categoria": "Agentes e ALM",
+  "resumo": "Cria os ambientes do Power Platform para desenvolvimento, homologação e produção de agentes e IA.",
+  "descricao": "Cria ambientes do Power Platform com Dataverse para desenvolver (DEV), homologar (HML) e operar (PROD) agentes e soluções de IA, um de cada vez. Para cada ambiente você escolhe o nome, o tipo, a região, o idioma, a moeda, o grupo de segurança e se ele será um ambiente gerenciado. Começa consultando os ambientes do tenant, não cria dois ambientes com o mesmo nome, nunca exclui ambientes e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta dos ambientes do tenant e da capacidade usada (somente leitura)",
+    "Um ambiente por execução: DEV, HML ou PROD, com ou sem Dataverse",
+    "Opcional: ambiente gerenciado e grupo de segurança no ambiente criado",
+    "Cada ambiente com Dataverse usa 1 GB de capacidade de banco de dados"
+  ],
+  "tempoEstimadoMin": 15,
+  "papeisNecessarios": [
+    "Administrador do Power Platform ou Administrador Global"
+  ],
+  "preRequisitos": [
+    {
+      "tipo": "pwsh",
+      "versaoMinima": "7.4"
+    }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar os ambientes",
+      "descricao": "Somente leitura: confere a conta e lista os ambientes do tenant, com tipo, região, Dataverse e se é gerenciado, e a capacidade de banco de dados usada. Nada é alterado.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler e administrar os ambientes do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "criar",
+      "titulo": "Criar um ambiente",
+      "descricao": "Cria um ambiente e confere o resultado. Rode uma vez para cada camada (DEV, HML e PROD), revisando os dados a cada vez. PROD só pode ser criado depois de DEV e HML. A criação costuma levar de 1 a 20 minutos. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          {
+            "rotulo": "Ambientes",
+            "valor": "{{Ambientes}}"
+          },
+          {
+            "rotulo": "Criados por este item",
+            "valor": "{{AmbientesDoItem}}"
+          },
+          {
+            "rotulo": "Região do ambiente padrão",
+            "valor": "{{RegiaoPadrao}}"
+          },
+          {
+            "rotulo": "Banco de dados usado",
+            "valor": "{{BancoUsado}}"
+          },
+          {
+            "rotulo": "Último ambiente",
+            "valor": "{{EstadoAmbiente}}"
+          }
+        ],
+        "nota": "Cada ambiente com Dataverse precisa de 1 GB livre de banco de dados: confira em Licenças > Capacidade no Power Platform admin center. Depois de criar, abra o ambiente e valide criar uma solução, uma conexão e as permissões; depois revise DLP, grupos de ambientes, roteamento, pipelines, auditoria e políticas de agentes."
+      },
+      "campos": [
+        {
+          "id": "Camada",
+          "rotulo": "Camada",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "DEV",
+          "opcoes": [
+            {
+              "valor": "DEV",
+              "rotulo": "DEV · desenvolvimento",
+              "descricao": "Desenvolvimento e testes técnicos. Tipo sugerido: Sandbox."
+            },
+            {
+              "valor": "HML",
+              "rotulo": "HML · homologação",
+              "descricao": "Testes integrados e aceite. Tipo sugerido: Sandbox."
+            },
+            {
+              "valor": "PROD",
+              "rotulo": "PROD · produção",
+              "descricao": "Operação produtiva e controlada. Tipo sugerido: Produção."
+            }
+          ]
+        },
+        {
+          "id": "NomeAmbiente",
+          "rotulo": "Nome do ambiente",
+          "tipo": "texto",
+          "placeholder": "Ex.: Agentes IA - DEV",
+          "padraoRegex": "^.{0,100}$",
+          "mensagemRegex": "Use até 100 caracteres."
+        },
+        {
+          "id": "Finalidade",
+          "rotulo": "Descrição e finalidade (opcional)",
+          "tipo": "texto",
+          "placeholder": "Ex.: Desenvolvimento dos agentes do Copilot Studio",
+          "padraoRegex": "^.{0,200}$",
+          "mensagemRegex": "Use até 200 caracteres.",
+          "ajuda": "Gravada exatamente como digitada na descrição do ambiente."
+        },
+        {
+          "id": "TipoAmbiente",
+          "rotulo": "Tipo",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "Sandbox",
+          "opcoes": [
+            {
+              "valor": "Sandbox",
+              "rotulo": "Sandbox (área restrita)",
+              "descricao": "Para DEV e HML. Pode ser copiado, redefinido e restaurado."
+            },
+            {
+              "valor": "Production",
+              "rotulo": "Produção",
+              "descricao": "Para PROD."
+            }
+          ]
+        },
+        {
+          "id": "Regiao",
+          "rotulo": "Região",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "southamerica",
+          "opcoes": [
+            {
+              "valor": "southamerica",
+              "rotulo": "América do Sul (Brasil)"
+            },
+            {
+              "valor": "unitedstates",
+              "rotulo": "Estados Unidos"
+            },
+            {
+              "valor": "canada",
+              "rotulo": "Canadá"
+            },
+            {
+              "valor": "europe",
+              "rotulo": "Europa"
+            },
+            {
+              "valor": "unitedkingdom",
+              "rotulo": "Reino Unido"
+            },
+            {
+              "valor": "france",
+              "rotulo": "França"
+            },
+            {
+              "valor": "germany",
+              "rotulo": "Alemanha"
+            },
+            {
+              "valor": "switzerland",
+              "rotulo": "Suíça"
+            },
+            {
+              "valor": "norway",
+              "rotulo": "Noruega"
+            },
+            {
+              "valor": "sweden",
+              "rotulo": "Suécia"
+            },
+            {
+              "valor": "italy",
+              "rotulo": "Itália"
+            },
+            {
+              "valor": "poland",
+              "rotulo": "Polônia"
+            },
+            {
+              "valor": "southafrica",
+              "rotulo": "África do Sul"
+            },
+            {
+              "valor": "unitedarabemirates",
+              "rotulo": "Emirados Árabes Unidos"
+            },
+            {
+              "valor": "asia",
+              "rotulo": "Ásia"
+            },
+            {
+              "valor": "australia",
+              "rotulo": "Austrália"
+            },
+            {
+              "valor": "japan",
+              "rotulo": "Japão"
+            },
+            {
+              "valor": "india",
+              "rotulo": "Índia"
+            },
+            {
+              "valor": "korea",
+              "rotulo": "Coreia do Sul"
+            }
+          ],
+          "ajuda": "Use a mesma região em DEV, HML e PROD. Se o tenant não permitir escolher a região exata, o ambiente é criado na macro região abaixo."
+        },
+        {
+          "id": "MacroRegiao",
+          "rotulo": "Macro região (se o tenant exigir)",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "auto",
+          "opcoes": [
+            {
+              "valor": "auto",
+              "rotulo": "Automática, pela região escolhida",
+              "descricao": "Estados Unidos e Canadá: América do Norte. América do Sul: Américas. Europa: União Europeia e EFTA. Reino Unido: Europa e Reino Unido."
+            },
+            {
+              "valor": "north-america",
+              "rotulo": "América do Norte",
+              "descricao": "Estados Unidos ou Canadá."
+            },
+            {
+              "valor": "the-americas",
+              "rotulo": "Américas",
+              "descricao": "Estados Unidos, Canadá ou Brasil."
+            },
+            {
+              "valor": "eu-efta",
+              "rotulo": "União Europeia e EFTA"
+            },
+            {
+              "valor": "europe-uk",
+              "rotulo": "Europa e Reino Unido"
+            },
+            {
+              "valor": "emea",
+              "rotulo": "Europa, Oriente Médio e África"
+            },
+            {
+              "valor": "asia-pacific",
+              "rotulo": "Ásia-Pacífico"
+            }
+          ],
+          "ajuda": "Muitos tenants já não deixam escolher o país exato: a Microsoft escolhe o datacenter dentro da macro região, e o primeiro ambiente define onde os próximos ficam. Escolher o país exato exige o Advanced Data Residency."
+        },
+        {
+          "id": "Dataverse",
+          "rotulo": "Dataverse",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "sim",
+          "opcoes": [
+            {
+              "valor": "sim",
+              "rotulo": "Sim, criar com Dataverse",
+              "descricao": "Necessário para agentes, soluções e ambiente gerenciado."
+            },
+            {
+              "valor": "nao",
+              "rotulo": "Não"
+            }
+          ]
+        },
+        {
+          "id": "Idioma",
+          "rotulo": "Idioma base (só com Dataverse)",
+          "tipo": "texto",
+          "padrao": "1046",
+          "padraoRegex": "^(\\d{4,5})?$",
+          "mensagemRegex": "Use o código do idioma (ex.: 1046 português do Brasil, 1033 inglês, 3082 espanhol).",
+          "ajuda": "Código do idioma: 1046 português do Brasil, 1033 inglês, 3082 espanhol. É conferido na lista de idiomas da região. Não pode ser mudado depois."
+        },
+        {
+          "id": "Moeda",
+          "rotulo": "Moeda base (só com Dataverse)",
+          "tipo": "texto",
+          "padrao": "BRL",
+          "padraoRegex": "^([A-Za-z]{3})?$",
+          "mensagemRegex": "Use o código de 3 letras da moeda (ex.: BRL, USD).",
+          "ajuda": "Conferida na lista de moedas da região. Não pode ser mudada depois."
+        },
+        {
+          "id": "GrupoSeguranca",
+          "rotulo": "Grupo de segurança (opcional)",
+          "tipo": "guid",
+          "placeholder": "Object ID do grupo no Microsoft Entra ID",
+          "ajuda": "Só os membros do grupo terão acesso ao ambiente. Em branco, o acesso não é restrito por grupo."
+        },
+        {
+          "id": "Dominio",
+          "rotulo": "Domínio do Dataverse (opcional)",
+          "tipo": "texto",
+          "placeholder": "Em branco: gerado automaticamente",
+          "padraoRegex": "^([A-Za-z0-9][A-Za-z0-9-]{0,61})?$",
+          "mensagemRegex": "Use letras, números e hífen, começando por letra ou número.",
+          "ajuda": "Parte inicial do endereço do ambiente (dominio.crm.dynamics.com)."
+        },
+        {
+          "id": "Gerenciado",
+          "rotulo": "Ambiente gerenciado",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "sim",
+          "opcoes": [
+            {
+              "valor": "sim",
+              "rotulo": "Sim, tornar o ambiente gerenciado",
+              "descricao": "Recomendado para agentes e IA: mais controles de governança. Os usuários do ambiente precisam de licença premium."
+            },
+            {
+              "valor": "nao",
+              "rotulo": "Não"
+            }
+          ]
+        },
+        {
+          "id": "ConfirmacaoCriar",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "CRIAR",
+          "ajuda": "Revise os dados acima e digite CRIAR. O campo é limpo depois de cada execução: para a próxima camada, revise e digite de novo."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-criar.ps1",
+        "rotuloBotao": "Criar o ambiente",
+        "obrigatorio": false,
+        "entradas": [
+          "TenantId",
+          "Conta",
+          "Camada",
+          "NomeAmbiente",
+          "Finalidade",
+          "TipoAmbiente",
+          "Regiao",
+          "MacroRegiao",
+          "Dataverse",
+          "Idioma",
+          "Moeda",
+          "GrupoSeguranca",
+          "Dominio",
+          "Gerenciado",
+          "ConfirmacaoCriar"
+        ],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler e administrar os ambientes do Power Platform"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://api.powerplatform.com/.default",
+            "proposito": "Criar ambientes no Power Platform"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      {
+        "rotulo": "Conta",
+        "valor": "{{Conta}}"
+      },
+      {
+        "rotulo": "Ambientes criados por este item",
+        "valor": "{{AmbientesDoItem}}"
+      },
+      {
+        "rotulo": "Último ambiente",
+        "valor": "{{EstadoAmbiente}}"
+      },
+      {
+        "rotulo": "Environment ID",
+        "valor": "{{EnvironmentIdCriado}}"
+      },
+      {
+        "rotulo": "Endereço",
+        "valor": "{{UrlAmbiente}}"
+      },
+      {
+        "rotulo": "Evidências",
+        "valor": "{{PastaEvidencias}}"
+      }
+    ],
+    "links": [
+      {
+        "rotulo": "Abrir os ambientes no Power Platform admin center",
+        "url": "https://admin.powerplatform.microsoft.com/manage/environments"
+      }
+    ]
+  }
+}

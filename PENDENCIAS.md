@@ -17,6 +17,46 @@ Decisões em aberto com o time do COE. Não fazem parte do instalador até serem
 
 **Observação:** o roteamento ficou ligado no tenant de demo (crm202149) depois do teste.
 
+## Apps e fluxos em soluções (AUTO-13)
+
+**Situação:** o roteiro em Word (`originais/13-roteiro.docx`, cabeçalho COE-IA-006) faz a troca à mão no admin center, dizendo que não há comando público. A documentação da Microsoft ("Add canvas apps and cloud flows to a solution by default", considerações, item 5) diz que as duas chaves da tela gravam as colunas `enablecanvasappsinsolutionsbydefault` e `enableflowsinsolutionbydefault` da tabela `organization`, listadas como graváveis. O item muda essas colunas pela Web API do Dataverse.
+
+**Teste manual (16/11/2026, CRM332072):** as duas chaves estavam ligadas; desligadas pela API, a releitura e o admin center mostraram desligadas.
+
+**Ficou em aberto:** o app de teste `LAB-AUTO13`, criado com as chaves desligadas, apareceu na Common Data Services Default Solution (comportamento de chave ligada). Pode ter sido criado antes da troca ou o Power Apps pode demorar a refletir. O teste manual terminou antes de restaurar, mas a v1.8.0 religou as duas no CRM332072 (16/11/2026, 22:35): o ambiente voltou ao original.
+
+**Teste pelo instalador (v1.8.0):** consultar e aplicar funcionaram (desligar e religar), mas o botão Avançar não liberava depois de aplicar: o script limpa a confirmação e o app achava que os campos tinham mudado. Corrigido na v1.8.1 (a conferência considera os campos que o próprio script preencheu).
+
+**Validação (16/11/2026):** com as chaves ligadas, um fluxo novo nasceu dentro da Common Data Services Default Solution. Item validado.
+
+## Ambientes DEV, HML e PROD (AUTO-10): testar pelo instalador
+
+**Situação:** o item não tinha script, só um roteiro em Word (`originais/10-provisionamento-ambientes-roteiro.docx`, cabeçalho COE-IA-007). Validado no teste manual (13/11/2026, tenant de demo crm332072): consulta de ambientes, regiões, idiomas e moedas; criação de um Sandbox com Dataverse (português, real) em cerca de 1 minuto; ambiente gerenciado (protectionLevel Standard, aparece depois de uns 40 s).
+
+**O que mudou em relação ao roteiro:**
+- O `New-AdminPowerAppEnvironment` do roteiro é recusado nesse tenant com *MacroRegionRequired*. A Microsoft orienta usar a API de provisionamento (`api.powerplatform.com/environmentmanagement/provisioning/environments`, 2024-10-01) com `macroRegion`; o módulo antigo não tem esse parâmetro. A correção equivalente no PAC CLI saiu na 2.15.
+- Idiomas e moedas só vieram pela macro região (`north-america`) com a API 2021-04-01. Pela região (`unitedstates`) o serviço responde *InvalidMacroRegion*.
+- Macro regiões conhecidas (PAC CLI 2.15): north-america, the-americas, emea, europe-uk, eu-efta, asia-pacific. Só `north-america` foi testada; não confirmamos se o Brasil fica em `the-americas`.
+- O roteiro usa a URL da instância como alternativa ao Environment ID; isso está errado e não foi levado para o instalador.
+
+**Teste pelo instalador (v1.6.0, 13/11/2026):** criou "Agentes IA - Homol" (América do Norte, Estados Unidos, gerenciado) e "Agentes de IA - Prod" (Produção, Américas, ficou no Canadá, gerenciado). Ficar no Canadá está correto: sem o Advanced Data Residency a Microsoft escolhe o datacenter dentro da macro região, e o primeiro ambiente fixa a região dos próximos ([documentação](https://learn.microsoft.com/power-platform/admin/macro-regions)).
+
+**Ajustes da v1.6.1 para seguir o roteiro:** região específica primeiro (como o `LocationName` do roteiro) e macro região só se o tenant exigir; Dataverse opcional (gerenciado exige Dataverse); qualquer idioma da região, pelo código; descrição gravada como digitada (os ambientes do item ficam em `ambientes-criados.csv` na pasta de evidências; os da v1.6.0 são reconhecidos pela marca antiga); CRIAR limpo a cada execução; PROD bloqueado sem DEV e HML; espera de até 120 min; aviso quando as camadas ficam em regiões diferentes; próximos passos do roteiro no fim.
+
+**Teste da v1.6.1 (13/11/2026):** "Agentes de IA - Dev" foi criado com a região específica `southamerica` e ficou no Brasil (`crm2.dynamics.com`), sem precisar da macro região. Ou seja, a nova API aceitou a região exata neste tenant (o comando antigo do roteiro é que exigia macro região).
+
+**O que não foi testado:** criar sem Dataverse; a região específica num tenant com Advanced Data Residency; grupo de segurança e domínio próprio. A remoção não existe no instalador, como pede o roteiro.
+
+**Para limpar:** ficaram no tenant de demo dois ambientes `LAB-AUTO10-DEV` do teste manual (um gerenciado). Remova pelo admin center quando não precisar mais.
+
+## Configurações do Dataverse (AUTO-11): testar pelo instalador
+
+**Situação:** o item não tinha script, só um roteiro em Word (`originais/11-dataverse-configuracoes-roteiro.docx`). O cabeçalho dele diz COE-IA-004 e a organização está fixa em `fpsnewdev`. Validado no teste manual (12/11/2026, tenant de demo, ambiente org31c11f3e): consulta de organização, idiomas, fusos, equipes, unidades de negócio e caixas de correio; mudar e voltar o fuso de um usuário; criar e apagar uma equipe proprietária; inverter e voltar a entrada e saída de e-mail de uma caixa.
+
+**O que não foi testado:** instalar um idioma (`ProvisionLanguageAsync`), porque o ambiente de teste só oferecia o inglês, que já era o idioma base; mudar o fuso de todos os usuários; o item pelo instalador (v1.5.3; na v1.5.2 criar equipe e ligar caixa falhavam na conferência por não acharem a equipe ou a caixa — corrigido; a v1.5.0 parava na consulta dos idiomas). No tenant crm332072 o admin center lista dezenas de idiomas com versão 0.0 (pacote ainda não baixado), mas RetrieveAvailableLanguages só devolve o inglês; desde a v1.5.2 o instalador tenta instalar mesmo assim e mostra o erro do Dataverse se ele recusar.
+
+**Diferenças do roteiro:** o login é o do instalador (sem Az.Accounts); o fuso pode ir para um usuário ou para todos, com o fuso anterior guardado nas evidências; a equipe criada leva a marca "Criada pelo Readiness Deploy Accelerator" na descrição e só equipes com a marca podem ser removidas.
+
 ## Descoberta restrita no SharePoint (AUTO-16): testar pelo instalador
 
 **Situação:** havia dois materiais do item; a base é o script (`originais/16-rcd-sharepoint.ps1`), mais completo. Do roteiro em Word (`originais/16-rcd-sharepoint-roteiro.docx`) veio a lista de todos os sites com o estado do recurso. Teste manual (12/11/2026, tenant de demo): consulta e lista de 13 sites funcionaram sem o SharePoint Advanced Management.

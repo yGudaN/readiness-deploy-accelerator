@@ -2,6 +2,7 @@
   "id": "auditoria-copilot",
   "nome": "Auditoria do Copilot",
   "versao": "1.0.0",
+  "categoria": "Segurança e conformidade",
   "resumo": "Confere a auditoria do Microsoft 365 e guarda o registro de uso do Copilot.",
   "descricao": "Cada uso do Copilot gera um registro no log de auditoria do Microsoft 365 (quem usou, quando e em qual aplicativo), desde que a auditoria esteja ligada. Este item confere se a auditoria está ligada, conta os registros do Copilot do período escolhido e lista as políticas de retenção de auditoria. Se precisar, liga a auditoria e cria uma política que guarda os registros do Copilot por mais tempo. O conteúdo das conversas (perguntas, respostas e arquivos) não é lido nem exportado. A consulta não altera nada e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

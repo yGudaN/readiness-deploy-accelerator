@@ -2,6 +2,7 @@
   "id": "descoberta-restrita",
   "nome": "Descoberta restrita no SharePoint",
   "versao": "1.0.0",
+  "categoria": "Segurança e conformidade",
   "resumo": "Tira um site da pesquisa da organização e do Copilot, sem mudar permissões.",
   "descricao": "A descoberta restrita de conteúdo (Restricted Content Discovery) faz um site deixar de aparecer na pesquisa da organização e nas respostas do Copilot para quem não usa o site, enquanto o conteúdo é revisado. As permissões não mudam: quem já tem acesso continua acessando normalmente. Este item lista todos os sites com o estado do recurso e liga ou desliga em um site escolhido. Exige o SharePoint Advanced Management (incluído no Microsoft 365 Copilot ou vendido à parte). Começa consultando o tenant e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

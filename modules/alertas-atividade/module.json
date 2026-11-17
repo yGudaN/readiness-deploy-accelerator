@@ -2,6 +2,7 @@
   "id": "alertas-atividade",
   "nome": "Alertas de atividade incomum",
   "versao": "1.0.0",
+  "categoria": "Segurança e conformidade",
   "resumo": "Política de alerta no Microsoft Purview para atividade fora do padrão.",
   "descricao": "Cria no Microsoft Purview uma política de alerta que avisa por e-mail quando um usuário faz uma atividade fora do normal. Por padrão, a atividade é a exclusão de pesquisas de conteúdo (eDiscovery), um sinal comum de tentativa de apagar rastros. Há dois tipos: atividade incomum, em que a Microsoft aprende o padrão de cada usuário e alerta quando ele foge desse padrão, e volume, que alerta quando o mesmo usuário passa de uma quantidade num intervalo. Começa consultando o tenant, não duplica a política, nunca altera as políticas padrão da Microsoft e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

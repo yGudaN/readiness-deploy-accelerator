@@ -1,0 +1,142 @@
+{
+  "id": "solucoes-por-padrao",
+  "nome": "Apps e fluxos em soluções",
+  "categoria": "Agentes e ALM",
+  "versao": "1.0.0",
+  "resumo": "Faz os novos apps de tela e fluxos da nuvem de um ambiente nascerem dentro de uma solução.",
+  "descricao": "Liga ou desliga, em um ambiente com Dataverse, a criação de novos aplicativos de tela e fluxos da nuvem dentro de soluções por padrão. Com isso eles já nascem prontos para ALM: referências de conexão, variáveis de ambiente e transporte entre DEV, HML e PROD. A mudança vale só para o que for criado daqui em diante: apps e fluxos que já existem não mudam de lugar. Começa consultando o ambiente e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta do estado atual no ambiente (somente leitura)",
+    "Aplicativos de tela em soluções por padrão: ligado ou desligado",
+    "Fluxos da nuvem em soluções por padrão: ligado ou desligado"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador do sistema no ambiente, Administrador do Power Platform ou Administrador Global"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o ambiente",
+      "descricao": "Somente leitura: confere o ambiente, o papel da conta e se os novos apps de tela e fluxos da nuvem já são criados em soluções. Nada é alterado.",
+      "campos": [
+        {
+          "id": "EnvironmentUrl",
+          "rotulo": "URL do ambiente (Dataverse)",
+          "tipo": "url",
+          "obrigatorio": true,
+          "placeholder": "https://orgxxxxxxx.crm.dynamics.com",
+          "ajuda": "No Power Platform admin center: Ambientes > ambiente > URL do ambiente. Ou em make.powerapps.com: engrenagem > Detalhes da sessão > URL da instância.",
+          "padraoRegex": "^https://[A-Za-z0-9-]+\\.crm[0-9]*\\.dynamics\\.com/?$",
+          "mensagemRegex": "Informe a URL do Dataverse, ex.: https://org1234567.crm.dynamics.com"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["EnvironmentUrl"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aplicar",
+      "titulo": "Ativar ou desativar",
+      "descricao": "Define se os novos apps de tela e fluxos da nuvem deste ambiente nascem dentro de uma solução. Confere o resultado relendo o ambiente.",
+      "situacao": {
+        "titulo": "Situação atual no ambiente",
+        "itens": [
+          { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+          { "rotulo": "Sua conta", "valor": "{{PapelAdmin}}", "okQuando": ["Administrador do sistema"], "alertaQuando": ["Sem o papel"] },
+          { "rotulo": "Apps de tela em soluções", "valor": "{{EstadoCanvas}}" },
+          { "rotulo": "Fluxos da nuvem em soluções", "valor": "{{EstadoFluxos}}" }
+        ],
+        "nota": "Sem uma solução preferida definida, os novos itens vão para a Common Data Services Default Solution. Apps de tela em soluções ainda é recurso em versão prévia da Microsoft: avalie antes de ligar em produção."
+      },
+      "campos": [
+        {
+          "id": "CanvasApps",
+          "rotulo": "Apps de tela em soluções por padrão",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "sim",
+          "opcoes": [
+            { "valor": "sim", "rotulo": "Ligar", "descricao": "Novos apps de tela nascem dentro de uma solução (recurso em versão prévia)." },
+            { "valor": "nao", "rotulo": "Desligar", "descricao": "Novos apps de tela ficam fora das soluções." }
+          ]
+        },
+        {
+          "id": "CloudFlows",
+          "rotulo": "Fluxos da nuvem em soluções por padrão",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "sim",
+          "opcoes": [
+            { "valor": "sim", "rotulo": "Ligar", "descricao": "Novos fluxos da nuvem nascem dentro de uma solução." },
+            { "valor": "nao", "rotulo": "Desligar", "descricao": "Novos fluxos da nuvem ficam fora das soluções." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoSolucoes",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "SIM",
+          "ajuda": "Revise os valores e digite SIM. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-aplicar.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": true,
+        "entradas": ["EnvironmentUrl", "TenantId", "Conta", "CanvasApps", "CloudFlows", "ConfirmacaoSolucoes"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "validar",
+      "titulo": "Validar com um item de teste",
+      "descricao": "Confira na prática, como pede o roteiro, que os novos itens nascem dentro de uma solução.",
+      "instrucoes": [
+        "Em make.powerapps.com, neste ambiente, crie um app de tela em branco (Aplicativos > Novo aplicativo > Tela) ou, em make.powerautomate.com, um fluxo da nuvem instantâneo. Modelos e formulários do SharePoint não seguem esta configuração.",
+        "Abra Soluções e confira se o item novo aparece dentro de uma solução (sem solução preferida, na Common Data Services Default Solution).",
+        "Registre o resultado e apague o item de teste, se não for usar."
+      ],
+      "links": [
+        { "rotulo": "Abrir as soluções do ambiente", "url": "https://make.powerapps.com/environments/{{EnvironmentId}}/solutions" },
+        { "rotulo": "Abrir as configurações do ambiente", "url": "https://admin.powerplatform.microsoft.com/manage/environments/environment/{{EnvironmentId}}/settings/Features" }
+      ],
+      "confirmacao": "Conferi que o item de teste ficou dentro de uma solução."
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+      { "rotulo": "Apps de tela em soluções", "valor": "{{EstadoCanvas}}" },
+      { "rotulo": "Fluxos da nuvem em soluções", "valor": "{{EstadoFluxos}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir as soluções do ambiente", "url": "https://make.powerapps.com/environments/{{EnvironmentId}}/solutions" }
+    ]
+  }
+}

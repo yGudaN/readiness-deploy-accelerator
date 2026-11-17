@@ -12,7 +12,7 @@ Electron (telas em React)  ──IPC──▶  processo principal  ──spawn�
 
 - **Telas:** pré-requisitos → catálogo → etapas de cada item escolhido → resumo.
 - **PowerShell 7 não vem no instalador.** O cliente instala antes; a tela de pré-requisitos confere a versão e mostra o link de instalação. Os módulos PowerShell exigidos (ex.: PnP.PowerShell) podem ser instalados pelo próprio app, com `Install-Module -Scope CurrentUser`.
-- **Cada item do catálogo é um módulo** em `modules/<id>/`, com um `module.json` e os scripts. A interface é montada a partir do manifesto: para incluir um item novo não é preciso mexer no código do app.
+- **Cada item do catálogo é um módulo** em `modules/<id>/`, com um `module.json` e os scripts. A interface é montada a partir do manifesto: para incluir um item novo não é preciso mexer no código do app. O campo `categoria` coloca o item num dos grupos do catálogo (os mesmos do checklist do COE: Habilitação, Comunidade, Experiência, Medição, Monitoramento, Acessos, Custos e consumo (FinOps), Segurança e conformidade, Agentes e ALM; a lista fica em `src/shared/tipos.ts` e o validador recusa outro nome).
 - **O login é feito pelo próprio instalador**, não pelos scripts. A pessoa escolhe no canto inferior esquerdo em qual navegador os logins e links abrem (a lista vem dos navegadores registrados no Windows). O app abre a página da Microsoft nesse navegador, recebe a resposta em `http://localhost:<porta>` (fluxo authorization code + PKCE) e entrega o token ao script. Um mesmo login serve para todas as etapas que usam o mesmo app e tenant.
 
 ## Estrutura
@@ -24,6 +24,17 @@ ReadinessDeployAccelerator/
 │   │   ├── module.json
 │   │   └── scripts/                            AlertasAtividade.psm1 (funções do script validado),
 │   │                                           01-consultar, 02-criar, 03-estado
+│   ├── solucoes-por-padrao/                    AUTO-13
+│   │   ├── module.json
+│   │   └── scripts/                            SolucoesPorPadrao.psm1, 01-consultar, 02-aplicar
+│   ├── provisionamento-ambientes/              AUTO-10
+│   │   ├── module.json
+│   │   └── scripts/                            ProvisionamentoAmbientes.psm1 (chamadas validadas no teste
+│   │                                           do roteiro em Word), 01-consultar, 02-criar
+│   ├── configuracoes-dataverse/                AUTO-11
+│   │   ├── module.json
+│   │   └── scripts/                            ConfiguracoesDataverse.psm1 (chamadas do roteiro em Word),
+│   │                                           01-consultar, 02-idioma, 03-fuso, 04-equipe, 05-caixa
 │   ├── descoberta-restrita/                    AUTO-16
 │   │   ├── module.json
 │   │   └── scripts/                            DescobertaRestrita.psm1 (funções do script validado +
@@ -181,6 +192,8 @@ Os itens que vêm dos scripts validados no laboratório seguem os padrões do gu
 
 ## O que ainda falta
 
+- **Ambientes DEV, HML e PROD (AUTO-10):** testar pelo instalador. Veja [PENDENCIAS.md](PENDENCIAS.md).
+- **Configurações do Dataverse (AUTO-11):** testar pelo instalador; instalar idioma ainda não rodou de verdade (o ambiente de teste só oferecia o inglês). Veja [PENDENCIAS.md](PENDENCIAS.md).
 - **Environment Routing: regras de roteamento** em aberto com o time. Veja [PENDENCIAS.md](PENDENCIAS.md).
 - **Testar pelo instalador o Environment Routing** num tenant real. O procedimento foi validado manualmente com o PAC CLI (`testes-manuais/Teste-EnvironmentRouting.ps1`), mas o módulo usa o login do app e a API de administração do Power Platform, que ainda não rodaram contra um tenant.
 - **Copilot Agent Kit:** ligar o code apps pela Power Platform API ainda não rodou num ambiente onde ele estivesse desligado.

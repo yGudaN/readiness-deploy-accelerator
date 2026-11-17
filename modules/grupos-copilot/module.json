@@ -2,6 +2,7 @@
   "id": "grupos-copilot",
   "nome": "Grupos Copilot-Premium e Copilot-Geral",
   "versao": "1.0.0",
+  "categoria": "Comunidade",
   "resumo": "Cria os dois grupos de segurança que segmentam os usuários do Copilot.",
   "descricao": "Cria e administra no Entra ID os grupos Copilot-Premium e Copilot-Geral, usados por outros itens do catálogo (por exemplo, a política de MFA para o Copilot) para aplicar regras diferentes a cada perfil de usuário. Começa sempre consultando o tenant, não duplica grupos e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

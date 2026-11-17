@@ -205,6 +205,69 @@ function criarSimulador(): ApiInstalador {
           estado: {
             EstadoAlerta: ({ desligar: 'Desligada · atividade incomum', ligar: 'Ligada · atividade incomum', remover: 'Não existe' } as Record<string, string>)[valores.NovoEstado] ?? ''
           }
+        },
+        'solucoes-por-padrao': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            NomeAmbiente: 'Agentes IA - DEV',
+            EnvironmentId: '00000000-0000-4000-8000-0000000000cc',
+            PapelAdmin: 'Administrador do sistema',
+            EstadoCanvas: 'Desligada',
+            EstadoFluxos: 'Ligada',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Apps-Fluxos-Solucoes'
+          },
+          aplicar: {
+            EstadoCanvas: valores.CanvasApps === 'nao' ? 'Desligada' : 'Ligada',
+            EstadoFluxos: valores.CloudFlows === 'nao' ? 'Desligada' : 'Ligada',
+            ConfirmacaoSolucoes: ''
+          }
+        },
+        'provisionamento-ambientes': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            Ambientes: '2 (1 com Dataverse, 0 gerenciados)',
+            AmbientesDoItem: 'Nenhum',
+            RegiaoPadrao: 'unitedstates',
+            BancoUsado: '123 MB',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Ambientes-Dev-Hml-Prod'
+          },
+          criar: {
+            EstadoAmbiente: `${valores.Camada ?? 'DEV'} · ${valores.NomeAmbiente || 'Agentes IA - DEV'} · ${valores.TipoAmbiente ?? 'Sandbox'}, canada, ${valores.Dataverse === 'nao' ? 'sem Dataverse' : 'com Dataverse'}, ${valores.Gerenciado === 'nao' ? 'não gerenciado' : 'gerenciado'}`,
+            UrlAmbiente: valores.Dataverse === 'nao' ? '' : 'https://org1a2b3c4d.crm.dynamics.com/',
+            EnvironmentIdCriado: '00000000-0000-4000-8000-0000000000dd',
+            AmbientesDoItem: `${valores.Camada ?? 'DEV'}: ${valores.NomeAmbiente || 'Agentes IA - DEV'} (canada)`,
+            ConfirmacaoCriar: ''
+          }
+        },
+        'configuracoes-dataverse': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            NomeAmbiente: 'Contoso (default)',
+            EnvironmentId: '00000000-0000-4000-8000-0000000000cc',
+            PapelAdmin: 'Administrador do sistema',
+            IdiomaBase: 'Inglês (Estados Unidos) [1033]',
+            IdiomasInstalados: 'Inglês (Estados Unidos) [1033]',
+            IdiomasDisponiveis: 'Português (Brasil) [1046], Espanhol (Espanha) [3082], Francês (França) [1036], Alemão (Alemanha) [1031], Italiano (Itália) [1040]',
+            FusosUsuarios: '174 usuários: 174 em (GMT) Coordinated Universal Time',
+            Equipes: '4 (1 proprietárias)',
+            UnidadesNegocio: '1 · principal: contoso',
+            EquipesDoItem: 'Nenhuma',
+            CaixasCorreio: '351 (12 com entrada e saída ligadas)',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Configuracoes-Dataverse'
+          },
+          idioma: { EstadoIdioma: 'Português (Brasil) [1046] · instalação pedida (até 1 hora)' },
+          fuso: {
+            EstadoFuso: valores.AlcanceFuso === 'todos' ? 'Todos (174) · (GMT-03:00) Brasilia' : `${valores.EmailUsuario || 'Usuário'} · (GMT-03:00) Brasilia`
+          },
+          equipe: {
+            EstadoEquipe: valores.AcaoEquipe === 'remover' ? `${valores.NomeEquipe ?? 'Equipe'} · removida` : `${valores.NomeEquipe ?? 'Equipe'} · Proprietária`
+          },
+          caixa: {
+            EstadoCaixa: `${valores.EmailCaixa ?? 'admin@contoso.onmicrosoft.com'} · entrada ${valores.AcaoCaixa === 'desligar' ? 'desligada, saída desligada' : 'ligada, saída ligada'} · endereço aprovado`
+          }
         }
       }
       return simular(

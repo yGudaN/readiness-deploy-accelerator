@@ -2,6 +2,7 @@
   "id": "sharepoint-compartilhamento",
   "nome": "Excesso de compartilhamento no SharePoint",
   "versao": "1.0.0",
+  "categoria": "Segurança e conformidade",
   "resumo": "Levanta o que está compartilhado demais no SharePoint antes de liberar o Copilot.",
   "descricao": "O Copilot encontra tudo o que o usuário tem permissão de ver. Este item levanta o compartilhamento externo do tenant e de cada site, mostra quais sites permitem links para qualquer pessoa e verifica se o SharePoint Advanced Management está disponível. Com ele, você também pode pedir os relatórios de governança de acesso do SharePoint, ligar a coleta de atividade de \"Todos exceto usuários externos\" e ajustar o compartilhamento de um site. A consulta não altera nada e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

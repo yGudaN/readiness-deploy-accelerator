@@ -2,6 +2,7 @@
   "id": "biblioteca-prompts",
   "nome": "Biblioteca de Prompts e Skills",
   "versao": "1.3.11",
+  "categoria": "Comunidade",
   "resumo": "Catálogo de prompts e skills do Copilot no SharePoint, pronto para virar guia no Teams.",
   "descricao": "Um lugar único para os colaboradores encontrarem, copiarem e compartilharem prompts e skills do Copilot, filtrando por área, ação e ferramenta. Cada pessoa marca favoritos e os autores editam só o que publicaram. O dashboard mostra os prompts mais usados, apoiando a adoção do Copilot na empresa.",
   "tempoEstimadoMin": 15,

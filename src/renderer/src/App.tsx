@@ -212,11 +212,12 @@ export function App() {
   const executarEtapa = (modulo: ModuloManifesto, etapa: EtapaDef): void => {
     const chave = chaveEtapa(modulo.id, etapa.id)
     const v = valoresLimpos(valores[modulo.id] ?? {})
-    const assinatura = assinaturaEntradas(etapa, v)
-    void iniciar(chave, () => api.executarScript(modulo.id, etapa.id, v, navegador), (sucesso) => {
+    void iniciar(chave, () => api.executarScript(modulo.id, etapa.id, v, navegador), (sucesso, saidas) => {
       setSucessos((s) => {
         const novo = { ...s }
-        if (sucesso) novo[chave] = assinatura
+        // Campos que o proprio script preencheu (ex.: limpar a confirmacao) fazem parte do resultado:
+        // a assinatura usa os valores ja com essas saidas, para nao pedir uma nova execucao.
+        if (sucesso) novo[chave] = assinaturaEntradas(etapa, valoresLimpos({ ...v, ...(saidas ?? {}) }))
         else delete novo[chave]
         return novo
       })

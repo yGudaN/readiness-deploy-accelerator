@@ -10,6 +10,9 @@ const erros = []
 const avisos = []
 const scripts = [join(pastaModulos, '_compartilhado', 'BizappInstalador.psm1')]
 const idsModulos = new Set()
+// Mesma lista de CATEGORIAS de src/shared/tipos.ts (grupos do catalogo, na ordem do checklist do COE)
+const textoTipos = readFileSync(join(pastaModulos, '..', 'src', 'shared', 'tipos.ts'), 'utf8')
+const CATEGORIAS = [...(textoTipos.match(/CATEGORIAS = \[([\s\S]*?)\]/)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((c) => c[1])
 
 for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
   if (!dir.isDirectory() || dir.name.startsWith('_')) continue
@@ -23,6 +26,7 @@ for (const dir of readdirSync(pastaModulos, { withFileTypes: true })) {
 
   for (const chave of ['id', 'nome', 'versao', 'resumo', 'descricao']) if (!m[chave]) erro(`"${chave}" obrigatorio`)
   if (m.id !== dir.name) erro(`id "${m.id}" deve ser igual ao nome da pasta`)
+  if (!CATEGORIAS.includes(m.categoria)) erro(`"categoria" deve ser uma de: ${CATEGORIAS.join(', ')}`)
   if (idsModulos.has(m.id)) erro(`id duplicado: ${m.id}`)
   idsModulos.add(m.id)
   if (!Array.isArray(m.preRequisitos)) erro('"preRequisitos" deve ser uma lista')

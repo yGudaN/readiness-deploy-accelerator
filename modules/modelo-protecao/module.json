@@ -2,6 +2,7 @@
   "id": "modelo-protecao",
   "nome": "Modelo de proteção de dados",
   "versao": "1.0.0",
+  "categoria": "Segurança e conformidade",
   "resumo": "DLP, Acesso Condicional e rótulo de sensibilidade como ponto de partida.",
   "descricao": "Cria um modelo inicial de proteção de dados para o Copilot, pronto para o time ajustar: uma política de DLP da Power Platform para os agentes, uma política de Acesso Condicional que exige MFA da conta administrativa, uma política de DLP do Microsoft Purview para o Exchange e um rótulo de sensibilidade \"Confidencial\" publicado para a conta administrativa. Tudo nasce sem efeito para os usuários: a DLP da Power Platform não bloqueia nenhum conector, o Acesso Condicional fica em modo de relatório e a DLP do Purview fica em teste, sem regras. Começa consultando o tenant, não duplica nada, só altera os objetos com os nomes do modelo e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

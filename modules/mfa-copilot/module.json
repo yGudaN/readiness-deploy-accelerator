@@ -2,6 +2,7 @@
   "id": "mfa-copilot",
   "nome": "MFA para o Copilot",
   "versao": "1.0.0",
+  "categoria": "Segurança e conformidade",
   "resumo": "Política de Acesso Condicional que exige MFA dos usuários do Copilot.",
   "descricao": "Cria no Entra ID a política de Acesso Condicional \"MFA Copilot\", que exige autenticação multifator dos membros dos grupos Copilot-Premium e Copilot-Geral ao acessar o Office 365. A política é criada em modo de relatório: não bloqueia nem pede MFA a ninguém, só registra quem seria afetado, para você avaliar antes de ligar. A conta administrativa e as contas de emergência ficam sempre fora da política. Começa consultando o tenant, não duplica a política e guarda um pacote de evidências de cada execução.",
   "oQueInstala": [

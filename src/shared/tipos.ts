@@ -126,11 +126,27 @@ export interface DependenciaDef {
   dica?: string
 }
 
+/** Grupos do catalogo, na ordem do checklist do COE (os mesmos nomes). */
+export const CATEGORIAS = [
+  'Habilitação',
+  'Comunidade',
+  'Experiência',
+  'Medição',
+  'Monitoramento',
+  'Acessos',
+  'Custos e consumo (FinOps)',
+  'Segurança e conformidade',
+  'Agentes e ALM'
+] as const
+export type Categoria = (typeof CATEGORIAS)[number]
+
 export interface ModuloManifesto {
   id: string
   nome: string
   versao: string
   resumo: string
+  /** Grupo do item no catalogo (uma das CATEGORIAS, na ordem em que aparecem). */
+  categoria?: Categoria
   /** O que e e para que serve (aparece ao expandir o item no catalogo). */
   descricao: string
   /** O que sera criado ou instalado no tenant, um item por linha. */

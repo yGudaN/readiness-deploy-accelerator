@@ -246,6 +246,8 @@ button, input { font: inherit; letter-spacing: inherit; }
 .cartao { background: var(--biz-off-white); border-radius: var(--biz-radius); padding: 24px; }
 
 /* Catalogo em lista: so o nome na linha; detalhes ao expandir */
+.catalogo-grupo + .catalogo-grupo { margin-top: 22px; }
+.catalogo-grupo__titulo { margin: 0 0 10px 4px; font-size: 15px; font-weight: 600; color: var(--biz-purple); }
 .catalogo-lista { display: flex; flex-direction: column; gap: 8px; }
 /* As duas colunas (itens pares e impares) somem na janela estreita: os itens viram uma lista so,
    na ordem original (style order no item). */

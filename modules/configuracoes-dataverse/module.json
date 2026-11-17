@@ -1,0 +1,307 @@
+{
+  "id": "configuracoes-dataverse",
+  "nome": "Configurações do Dataverse",
+  "versao": "1.0.0",
+  "categoria": "Agentes e ALM",
+  "resumo": "Idiomas, fusos horários, equipes e caixas de correio de um ambiente do Power Platform.",
+  "descricao": "Prepara um ambiente do Power Platform (com Dataverse) para uso: instala idiomas da lista aprovada, ajusta o fuso horário dos usuários, cria equipes proprietárias e liga a entrada e a saída de e-mail das caixas de correio. Começa consultando o ambiente, não duplica equipes, guarda o fuso anterior de cada usuário e um pacote de evidências de cada execução. Cada etapa depois da consulta é opcional.",
+  "oQueInstala": [
+    "Consulta do ambiente: idiomas, fusos dos usuários, equipes, unidades de negócio e caixas de correio (somente leitura)",
+    "Opcional: instalar um idioma (português, inglês, espanhol, francês, alemão ou italiano)",
+    "Opcional: ajustar o fuso horário de um usuário ou de todos",
+    "Opcional: criar ou remover uma equipe proprietária",
+    "Opcional: ligar ou desligar a entrada e a saída de e-mail de uma caixa de correio"
+  ],
+  "tempoEstimadoMin": 10,
+  "papeisNecessarios": [
+    "Administrador do sistema no ambiente"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o ambiente",
+      "descricao": "Somente leitura: confere o ambiente e o papel da conta e lista os idiomas, os fusos dos usuários, as equipes, as unidades de negócio e as caixas de correio. Nada é alterado.",
+      "campos": [
+        {
+          "id": "EnvironmentUrl",
+          "rotulo": "URL do ambiente (Dataverse)",
+          "tipo": "url",
+          "obrigatorio": true,
+          "placeholder": "https://orgxxxxxxx.crm.dynamics.com",
+          "ajuda": "No Power Platform admin center: Ambientes > ambiente > URL do ambiente. Ou em make.powerapps.com: engrenagem > Detalhes da sessão > URL da instância.",
+          "padraoRegex": "^https://[A-Za-z0-9-]+\\.crm[0-9]*\\.dynamics\\.com/?$",
+          "mensagemRegex": "Informe a URL do Dataverse, ex.: https://org1234567.crm.dynamics.com"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["EnvironmentUrl"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "idioma",
+      "titulo": "Instalar um idioma",
+      "descricao": "Instala um idioma no ambiente para os usuários poderem escolher. A instalação roda em segundo plano, pode levar até 1 hora e não muda o idioma base do ambiente. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no ambiente",
+        "itens": [
+          { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+          { "rotulo": "Sua conta", "valor": "{{PapelAdmin}}", "okQuando": ["Administrador do sistema"], "alertaQuando": ["Sem o papel Administrador do sistema"] },
+          { "rotulo": "Idioma base", "valor": "{{IdiomaBase}}" },
+          { "rotulo": "Idiomas instalados", "valor": "{{IdiomasInstalados}}" },
+          { "rotulo": "Da lista aprovada, não instalados", "valor": "{{IdiomasDisponiveis}}" },
+          { "rotulo": "Último pedido", "valor": "{{EstadoIdioma}}" }
+        ],
+        "nota": "A lista completa de idiomas do ambiente fica no Power Platform admin center, em Configurações > Produto > Idiomas. Instalar não é desfeito por este item: para remover, use as configurações de idioma do ambiente."
+      },
+      "campos": [
+        {
+          "id": "Idioma",
+          "rotulo": "Idioma",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "1046",
+          "opcoes": [
+            { "valor": "1046", "rotulo": "Português (Brasil)" },
+            { "valor": "1033", "rotulo": "Inglês (Estados Unidos)" },
+            { "valor": "3082", "rotulo": "Espanhol (Espanha)" },
+            { "valor": "1036", "rotulo": "Francês (França)" },
+            { "valor": "1031", "rotulo": "Alemão (Alemanha)" },
+            { "valor": "1040", "rotulo": "Italiano (Itália)" }
+          ]
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-idioma.ps1",
+        "rotuloBotao": "Instalar o idioma",
+        "obrigatorio": false,
+        "entradas": ["EnvironmentUrl", "TenantId", "Conta", "Idioma"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fuso",
+      "titulo": "Ajustar o fuso horário",
+      "descricao": "Muda o fuso horário que o ambiente usa para mostrar datas e horas a um usuário ou a todos os usuários ativos. Usuários de aplicativo e de suporte da Microsoft ficam de fora. O fuso anterior de cada usuário fica guardado nas evidências. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no ambiente",
+        "itens": [
+          { "rotulo": "Usuários ativos", "valor": "{{FusosUsuarios}}" },
+          { "rotulo": "Último ajuste", "valor": "{{EstadoFuso}}" }
+        ],
+        "nota": "A lista completa, usuário a usuário, está em usuarios-fuso.csv na pasta de evidências da consulta."
+      },
+      "campos": [
+        {
+          "id": "Fuso",
+          "rotulo": "Fuso horário",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "brasilia",
+          "opcoes": [
+            { "valor": "brasilia", "rotulo": "Brasília (GMT-3)", "descricao": "São Paulo, Rio de Janeiro, Brasília e a maior parte do Brasil." },
+            { "valor": "fortaleza", "rotulo": "Fortaleza (GMT-3)" },
+            { "valor": "cuiaba", "rotulo": "Cuiabá (GMT-4)" },
+            { "valor": "manaus", "rotulo": "Manaus (GMT-4)" },
+            { "valor": "riobranco", "rotulo": "Rio Branco (GMT-5)" },
+            { "valor": "utc", "rotulo": "UTC (GMT)", "descricao": "Padrão dos ambientes novos." }
+          ]
+        },
+        {
+          "id": "AlcanceFuso",
+          "rotulo": "Para quem",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "usuario",
+          "opcoes": [
+            { "valor": "usuario", "rotulo": "Um usuário", "descricao": "Informe o e-mail abaixo." },
+            { "valor": "todos", "rotulo": "Todos os usuários ativos", "descricao": "Exige confirmação." }
+          ]
+        },
+        {
+          "id": "EmailUsuario",
+          "rotulo": "E-mail do usuário (só para um usuário)",
+          "tipo": "texto",
+          "padrao": "{{Conta}}",
+          "padraoRegex": "^([^@\\s]+@[^@\\s]+\\.[^@\\s]+)?$",
+          "mensagemRegex": "Informe um e-mail."
+        },
+        {
+          "id": "ConfirmacaoFuso",
+          "rotulo": "Confirmação (só para todos os usuários)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para mudar o fuso de todos os usuários ativos, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-fuso.ps1",
+        "rotuloBotao": "Ajustar o fuso",
+        "obrigatorio": false,
+        "entradas": ["EnvironmentUrl", "TenantId", "Conta", "Fuso", "AlcanceFuso", "EmailUsuario", "ConfirmacaoFuso"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "equipe",
+      "titulo": "Criar ou remover uma equipe",
+      "descricao": "Cria uma equipe proprietária, que pode ser dona de registros e receber papéis de segurança. Se já existir uma equipe com o mesmo nome, nada é criado. Remover só vale para equipes criadas por este item. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no ambiente",
+        "itens": [
+          { "rotulo": "Equipes", "valor": "{{Equipes}}" },
+          { "rotulo": "Unidades de negócio", "valor": "{{UnidadesNegocio}}" },
+          { "rotulo": "Criadas por este item", "valor": "{{EquipesDoItem}}" },
+          { "rotulo": "Última alteração", "valor": "{{EstadoEquipe}}" }
+        ],
+        "nota": "Depois de criar, adicione os membros e os papéis de segurança da equipe no Power Platform admin center."
+      },
+      "campos": [
+        {
+          "id": "AcaoEquipe",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "criar",
+          "opcoes": [
+            { "valor": "criar", "rotulo": "Criar a equipe" },
+            { "valor": "remover", "rotulo": "Remover a equipe", "descricao": "Só equipes criadas por este item. Exige confirmação." }
+          ]
+        },
+        {
+          "id": "NomeEquipe",
+          "rotulo": "Nome da equipe",
+          "tipo": "texto",
+          "placeholder": "Ex.: Equipe Comercial",
+          "padraoRegex": "^.{0,160}$",
+          "mensagemRegex": "Use até 160 caracteres."
+        },
+        {
+          "id": "UnidadeNegocio",
+          "rotulo": "Unidade de negócio (opcional)",
+          "tipo": "texto",
+          "placeholder": "Em branco: a unidade principal",
+          "ajuda": "Nome da unidade de negócio, como aparece no ambiente. Em branco, a equipe fica na unidade principal."
+        },
+        {
+          "id": "ConfirmacaoEquipe",
+          "rotulo": "Confirmação (só para remover)",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Para remover a equipe, digite CONFIRMO."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/04-equipe.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["EnvironmentUrl", "TenantId", "Conta", "AcaoEquipe", "NomeEquipe", "UnidadeNegocio", "ConfirmacaoEquipe"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "caixa",
+      "titulo": "Ligar o e-mail de uma caixa de correio",
+      "descricao": "Liga ou desliga a entrada e a saída de e-mail de uma caixa de correio do ambiente. Para o e-mail funcionar, o endereço ainda precisa ser aprovado e a caixa testada no Power Platform admin center. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual no ambiente",
+        "itens": [
+          { "rotulo": "Caixas de correio", "valor": "{{CaixasCorreio}}" },
+          { "rotulo": "Última caixa alterada", "valor": "{{EstadoCaixa}}" }
+        ],
+        "nota": "A lista completa está em caixas-correio.csv na pasta de evidências da consulta."
+      },
+      "campos": [
+        {
+          "id": "EmailCaixa",
+          "rotulo": "E-mail da caixa de correio",
+          "tipo": "texto",
+          "padrao": "{{Conta}}",
+          "padraoRegex": "^([^@\\s]+@[^@\\s]+\\.[^@\\s]+)?$",
+          "mensagemRegex": "Informe um e-mail."
+        },
+        {
+          "id": "AcaoCaixa",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "ligar",
+          "opcoes": [
+            { "valor": "ligar", "rotulo": "Ligar entrada e saída de e-mail" },
+            { "valor": "desligar", "rotulo": "Desligar entrada e saída de e-mail" }
+          ]
+        }
+      ],
+      "links": [
+        { "rotulo": "Abrir os ambientes no Power Platform admin center", "url": "https://admin.powerplatform.microsoft.com/manage/environments" }
+      ],
+      "script": {
+        "arquivo": "scripts/05-caixa.ps1",
+        "rotuloBotao": "Aplicar na caixa",
+        "obrigatorio": false,
+        "entradas": ["EnvironmentUrl", "TenantId", "Conta", "EmailCaixa", "AcaoCaixa"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+      { "rotulo": "Idioma", "valor": "{{EstadoIdioma}}" },
+      { "rotulo": "Fuso horário", "valor": "{{EstadoFuso}}" },
+      { "rotulo": "Equipe", "valor": "{{EstadoEquipe}}" },
+      { "rotulo": "Caixa de correio", "valor": "{{EstadoCaixa}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir o ambiente no Power Platform admin center", "url": "https://admin.powerplatform.microsoft.com/manage/environments/environment/{{EnvironmentId}}/hub" }
+    ]
+  }
+}
