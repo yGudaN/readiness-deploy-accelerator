@@ -110,7 +110,7 @@ function Add-RegistroItem {
     # Regrava o arquivo inteiro (se as colunas mudarem entre versoes, o -Append recusaria a linha)
     $linhas = @(if (Test-Path -LiteralPath $arq) { Import-Csv -LiteralPath $arq }) + $nova
     $linhas | Select-Object TenantId, EnvironmentId, Camada, Nome, Tipo, Regiao, MacroRegiao, UrlDataverse, Conta, CriadoEmUtc |
-        Export-Csv -LiteralPath $arq -NoTypeInformation -Encoding utf8
+        Export-Csv -LiteralPath $arq -Encoding utf8
 }
 
 function Set-AmbientesDoItem {

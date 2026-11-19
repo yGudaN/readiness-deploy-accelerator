@@ -206,6 +206,139 @@ function criarSimulador(): ApiInstalador {
             EstadoAlerta: ({ desligar: 'Desligada · atividade incomum', ligar: 'Ligada · atividade incomum', remover: 'Não existe' } as Record<string, string>)[valores.NovoEstado] ?? ''
           }
         },
+        'bloqueio-ia': {
+          app: {
+            DefenderNoTenant: 'Encontrado',
+            DefenderClientId: '00000000-0000-4000-8000-0000000000a7',
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Bloqueio-IA'
+          },
+          consultar: {
+            EstadoBloqueio: (valores.Dominios || 'chatgpt.com').split(/[;,\s]+/).filter(Boolean).map((d) => `${d} · sem indicador`).join('; '),
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb'
+          },
+          aplicar: {
+            EstadoBloqueio: (valores.Dominios || 'chatgpt.com').split(/[;,\s]+/).filter(Boolean)
+              .map((d) => valores.AcaoBloqueio === 'remover' ? `${d} · sem indicador` : `${d} · ${valores.AcaoBloqueio === 'bloquear' ? 'Block' : 'Warn'} até ${valores.ExpiracaoDias || '30'} dias`).join('; '),
+            ConfirmacaoBloqueio: ''
+          }
+        },
+        'powerbi-kpis': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            ListaWorkspaces: 'LAB-AUTO35; CoE IA',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\PowerBI-KPIs'
+          },
+          instalar: {
+            EstadoRelatorio: `${(valores.PbixPath || 'KPIs.pbix').replace(/^.*[\\/]/, '').replace(/"/g, '').replace(/\.pbix$/i, '')} · ${valores.Workspace || 'LAB-AUTO35'} · publicado`,
+            LinkRelatorio: 'https://app.powerbi.com/groups/me/list',
+            ConfirmacaoInstalar: ''
+          }
+        },
+        'inventario-payg': {
+          inventario: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            BillingPolicies: '1 (1 ativas)',
+            AmbientesPayg: 'Agents (PAYG Copilot)',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Inventario-PAYG'
+          }
+        },
+        'edge-copilot': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            LicencaIntune: 'Encontrada',
+            FuncaoIntune: 'Administrador Global',
+            EstadoPolitica: 'Nenhuma',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Edge-Copilot'
+          },
+          criar: {
+            EstadoPolitica: `${valores.NomePolitica || 'Edge - Microsoft 365 Copilot'} · sem atribuição (sem efeito nos dispositivos)`,
+            IdPolitica: '00000000-0000-4000-8000-0000000000f1',
+            ConfirmacaoCriar: ''
+          },
+          atribuicao: {
+            EstadoPolitica: valores.AcaoAtribuicao === 'excluir'
+              ? 'Não existe'
+              : `${valores.NomePolitica || 'Edge - Microsoft 365 Copilot'} · ${valores.AcaoAtribuicao === 'remover' ? 'sem atribuição (sem efeito nos dispositivos)' : 'atribuída a 1 grupo(s)'}`,
+            ConfirmacaoAtribuicao: ''
+          }
+        },
+        'copilot-credits': {
+          ambientes: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            ListaAmbientes: 'Agents; Agents DEV; Agents HML; Contoso (default)',
+            QtdAmbientes: '4 ambientes',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\Copilot-Credits'
+          },
+          consultar: {
+            NomeAmbiente: valores.Ambiente || 'Agents',
+            IdAmbiente: '00000000-0000-4000-8000-0000000000e1',
+            CreditosDisponiveis: '155.500',
+            AlocadoAtual: '0',
+            TenantPoolAtual: 'sem regra definida (padrão: usa a capacidade do tenant)'
+          },
+          alocar: {
+            EstadoAlocacao: `${valores.Quantidade || '5000'} alocados em ${valores.NomeAmbiente || 'Agents'} · capacidade do tenant depois de esgotar: ${valores.TenantPool === 'sim' ? 'sim' : 'não'}`,
+            AlocadoAtual: valores.Quantidade || '5000',
+            CreditosDisponiveis: '150.500',
+            ConfirmacaoAlocar: ''
+          }
+        },
+        'alm-pipelines': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            RegiaoTenant: 'unitedstates',
+            AmbientesDisponiveis: 'Agents (unitedstates); Agents DEV (unitedstates); Agents HML (unitedstates)',
+            AmbienteDev: 'Agents DEV',
+            AmbienteHml: 'Agents HML',
+            AmbienteProd: 'Agents',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\ALM-Pipelines'
+          },
+          preflight: {
+            IdDev: '00000000-0000-4000-8000-0000000000d1',
+            IdHml: '00000000-0000-4000-8000-0000000000d2',
+            IdProd: '00000000-0000-4000-8000-0000000000d3',
+            NomeDev: valores.AmbienteDev || 'Agents DEV',
+            NomeHml: valores.AmbienteHml || 'Agents HML',
+            NomeProd: valores.AmbienteProd || 'Agents',
+            EstadoDev: `${valores.AmbienteDev || 'Agents DEV'} · Sandbox, unitedstates, com Dataverse, não gerenciado`,
+            EstadoHml: `${valores.AmbienteHml || 'Agents HML'} · Sandbox, unitedstates, com Dataverse, não gerenciado`,
+            EstadoProd: `${valores.AmbienteProd || 'Agents'} · Production, unitedstates, com Dataverse, gerenciado`,
+            CrossGeo: 'Não necessário',
+            Gerenciados: 'Falta: HML',
+            ConfirmacaoAmbientes: ''
+          },
+          gerenciados: { Gerenciados: 'HML e PROD gerenciados' }
+        },
+        'mcp-agentes': {
+          consultar: {
+            Conta: 'admin@contoso.onmicrosoft.com',
+            TenantId: '00000000-0000-4000-8000-0000000000bb',
+            NomeAmbiente: 'Agentes IA - DEV',
+            EnvironmentId: '00000000-0000-4000-8000-0000000000cc',
+            PapelAdmin: 'Administrador do sistema',
+            ClientesLiberados: 'Agent 365 Tools, Microsoft Copilot Studio App, Microsoft Copilot Studio App - OBO',
+            ClientesBloqueados: 'Dataverse MCP CLI tool, Microsoft GitHub Copilot App',
+            Conectores: 'Nenhum',
+            PoliticasDlp: 'Nenhuma',
+            PastaEvidencias: 'C:\\Users\\voce\\Documents\\Readiness Deploy Accelerator\\evidencias\\MCP-Agentes'
+          },
+          clientes: {
+            ClientesLiberados: valores.AcaoCliente === 'bloquear'
+              ? 'Agent 365 Tools, Microsoft Copilot Studio App, Microsoft Copilot Studio App - OBO'
+              : 'Agent 365 Tools, Microsoft Copilot Studio App, Microsoft Copilot Studio App - OBO, Microsoft GitHub Copilot App',
+            ClientesBloqueados: valores.AcaoCliente === 'bloquear'
+              ? 'Dataverse MCP CLI tool, Microsoft GitHub Copilot App'
+              : 'Dataverse MCP CLI tool',
+            ConfirmacaoClientes: ''
+          }
+        },
         'solucoes-por-padrao': {
           consultar: {
             Conta: 'admin@contoso.onmicrosoft.com',

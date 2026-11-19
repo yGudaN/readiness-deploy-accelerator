@@ -246,18 +246,20 @@ button, input { font: inherit; letter-spacing: inherit; }
 .cartao { background: var(--biz-off-white); border-radius: var(--biz-radius); padding: 24px; }
 
 /* Catalogo em lista: so o nome na linha; detalhes ao expandir */
-.catalogo-grupo + .catalogo-grupo { margin-top: 22px; }
+.catalogo-grupos { display: flex; flex-direction: column; gap: 22px; }
+/* As duas colunas de grupos somem na janela estreita: os grupos viram uma lista so, na ordem
+   original (style order no grupo). */
+.catalogo-grupos__coluna { display: contents; }
 .catalogo-grupo__titulo { margin: 0 0 10px 4px; font-size: 15px; font-weight: 600; color: var(--biz-purple); }
-.catalogo-lista { display: flex; flex-direction: column; gap: 8px; }
-/* As duas colunas (itens pares e impares) somem na janela estreita: os itens viram uma lista so,
-   na ordem original (style order no item). */
-.catalogo-coluna { display: contents; list-style: none; margin: 0; padding: 0; }
-/* Janela larga (ex.: tela cheia): 2 colunas independentes, cada uma com a propria altura,
-   entao abrir os detalhes de um item so empurra os itens da mesma coluna. */
+.catalogo-lista { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+/* Janela larga (ex.: tela cheia): 2 colunas independentes de grupos (1o grupo a esquerda, 2o a
+   direita...), cada grupo com os itens um abaixo do outro. Abrir os detalhes de um item so
+   empurra os grupos da mesma coluna. */
 @media (min-width: 1400px) {
-  .principal__conteudo:has(.catalogo-lista) { max-width: 1400px; }
-  .catalogo-lista { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px; }
-  .catalogo-coluna { display: flex; flex-direction: column; gap: 10px; }
+  .principal__conteudo:has(.catalogo-grupos) { max-width: 1400px; }
+  .catalogo-grupos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px 28px; }
+  .catalogo-grupos__coluna { display: flex; flex-direction: column; gap: 22px; }
+  .catalogo-lista { gap: 10px; }
 }
 .item-lista {
   border: 1px solid var(--biz-off-white);
@@ -341,6 +343,7 @@ button, input { font: inherit; letter-spacing: inherit; }
 .etiquetas .etiqueta { white-space: normal; max-width: 100%; overflow-wrap: anywhere; }
 .etiqueta { font-size: 12px; padding: 3px 10px; border-radius: var(--biz-pill); background: var(--biz-white); color: var(--biz-black); white-space: nowrap; }
 .etiqueta.etiqueta--alerta { background: var(--biz-black); color: var(--biz-white); }
+.etiqueta.etiqueta--testar { background: transparent; color: var(--biz-purple); border: 1px solid var(--biz-purple); font-weight: 600; }
 
 /* ---------- Pre-requisitos ---------- */
 .requisitos { display: flex; flex-direction: column; gap: 10px; }

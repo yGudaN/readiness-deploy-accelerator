@@ -55,16 +55,17 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
         </span>
       </div>
 
-      {/* Duas colunas independentes (pares e impares): abrir um card nao estica o vizinho. Em janela
-          estreita as colunas somem (display: contents) e "order" devolve a ordem original. */}
-      {grupos.map((grupo) => (
-      <section key={grupo.titulo} className="catalogo-grupo" aria-label={grupo.titulo}>
+      {/* Janela larga: duas colunas independentes de GRUPOS (1o grupo a esquerda, 2o a direita...),
+          com os itens de cada grupo um abaixo do outro. Abrir um item so empurra a propria coluna.
+          Em janela estreita as colunas somem (display: contents) e "order" devolve a ordem original. */}
+      <div className="catalogo-grupos">
+      {[0, 1].map((coluna) => (
+      <div key={coluna} className="catalogo-grupos__coluna">
+      {grupos.map((grupo, g) => g % 2 !== coluna ? null : (
+      <section key={grupo.titulo} style={{ order: g }} className="catalogo-grupo" aria-label={grupo.titulo}>
       <h2 className="catalogo-grupo__titulo">{grupo.titulo}</h2>
-      <div className="catalogo-lista">
-        {[0, 1].map((coluna) => (
-        <ul key={coluna} className="catalogo-coluna">
-        {grupo.itens.map((m, i) => {
-          if (i % 2 !== coluna) return null
+      <ul className="catalogo-lista">
+        {grupo.itens.map((m) => {
           const selecionado = selecionados.includes(m.id)
           const expandido = expandidos.includes(m.id)
           const pendente = pendencias[m.id] ?? []
@@ -74,7 +75,7 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
             ? (m.dependeDe ?? []).filter((d) => !selecionados.includes(d.id) && !instalados.includes(d.id))
             : []
           return (
-            <li key={m.id} style={{ order: i }} className={`item-lista${selecionado ? ' item-lista--selecionado' : ''}${expandido ? ' item-lista--expandido' : ''}`}>
+            <li key={m.id} className={`item-lista${selecionado ? ' item-lista--selecionado' : ''}${expandido ? ' item-lista--expandido' : ''}`}>
               <div className="item-lista__linha">
                 <label className="item-lista__selecao">
                   <input type="checkbox" checked={selecionado} onChange={() => onAlternar(m.id)} aria-label={`Instalar ${m.nome}`} />
@@ -87,6 +88,7 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
                   onClick={() => alternarExpandido(m.id)}
                 >
                   <span className="item-lista__nome">{m.nome}</span>
+                  {m.testar && <span className="etiqueta etiqueta--testar" title="Este item ainda não foi testado num tenant real">Testar</span>}
                   {instalados.includes(m.id) && <span className="etiqueta etiqueta--alerta">✓ Concluído</span>}
                   {pendente.length > 0 && <span className="etiqueta etiqueta--alerta">Pré-requisito pendente</span>}
                   <span className="item-lista__seta" aria-hidden="true" />
@@ -145,11 +147,12 @@ export function TelaCatalogo({ modulos, selecionados, instalados, pendencias, on
             </li>
           )
         })}
-        </ul>
-        ))}
-      </div>
+      </ul>
       </section>
       ))}
+      </div>
+      ))}
+      </div>
       <p className="catalogo-rodape">Outras soluções do COE Bizapp vão aparecer aqui.</p>
     </>
   )

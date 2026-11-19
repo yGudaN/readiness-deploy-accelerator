@@ -83,7 +83,14 @@ export function TelaEtapa(p: Props) {
       {etapa.campos && (
         <div className="campos">
           {etapa.campos.map((c) => (
-            <Campo key={c.id} campo={c} valor={valores[c.id] ?? ''} desabilitado={emAndamento} onChange={(v) => p.onValor(c.id, v)} />
+            <Campo
+              key={c.id}
+              campo={c}
+              valor={valores[c.id] ?? ''}
+              desabilitado={emAndamento}
+              sugestoes={c.sugestoesDe ? [...new Set((valores[c.sugestoesDe] ?? '').split(';').map((s) => s.trim()).filter(Boolean))] : undefined}
+              onChange={(v) => p.onValor(c.id, v)}
+            />
           ))}
         </div>
       )}

@@ -1,0 +1,176 @@
+{
+  "id": "alm-pipelines",
+  "nome": "ALM com Pipelines",
+  "categoria": "Agentes e ALM",
+  "versao": "1.0.0",
+  "resumo": "Prepara DEV, HML e PROD e guia o pipeline de promoção de soluções e agentes.",
+  "descricao": "Prepara os ambientes DEV, HML e PROD para promover soluções e agentes com os Pipelines do Power Platform, sem um ambiente host dedicado (usa o host da plataforma). Confere Dataverse nos três ambientes, se HML e PROD são gerenciados e se as regiões exigem Cross-Geo, e corrige o que for preciso. O pipeline e o primeiro deployment são feitos na tela do Power Apps, com o passo a passo e os links prontos: o host da plataforma não permite criar pipelines por script. Começa consultando o tenant e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta e conferência de DEV, HML e PROD (somente leitura)",
+    "Opcional: HML e PROD como ambientes gerenciados",
+    "Passo a passo para criar o pipeline DEV → HML → PROD e fazer o primeiro deployment"
+  ],
+  "tempoEstimadoMin": 20,
+  "papeisNecessarios": [
+    "Administrador do Power Platform ou Administrador Global",
+    "Acesso de importação de soluções em HML e PROD (para o deployment)"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar os ambientes",
+      "descricao": "Somente leitura: lista os ambientes com Dataverse e a região do tenant, onde fica o host dos pipelines. Se você criou DEV, HML e PROD pelo item Ambientes DEV, HML e PROD, eles já vêm sugeridos na próxima etapa. Nada é alterado.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler e administrar os ambientes do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "preflight",
+      "titulo": "Conferir DEV, HML e PROD",
+      "descricao": "Informe os três ambientes e confirme. O instalador confere Dataverse nos três, se HML e PROD são gerenciados e se algum está fora da região do tenant (aí o pipeline exige Cross-Geo). Nada é alterado.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Região do tenant", "valor": "{{RegiaoTenant}}" },
+          { "rotulo": "Ambientes com Dataverse", "valor": "{{AmbientesDisponiveis}}" }
+        ],
+        "nota": "Use três ambientes diferentes, de preferência na região do tenant. Ambientes em outra região só funcionam no pipeline com o Cross-Geo ligado e aprovado pelo CoE."
+      },
+      "campos": [
+        {
+          "id": "AmbienteDev",
+          "rotulo": "Ambiente DEV (origem)",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "Nome ou ID do ambiente",
+          "ajuda": "Onde a solução é desenvolvida (não gerenciada). Não precisa ser gerenciado."
+        },
+        {
+          "id": "AmbienteHml",
+          "rotulo": "Ambiente HML (primeiro destino)",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "Nome ou ID do ambiente"
+        },
+        {
+          "id": "AmbienteProd",
+          "rotulo": "Ambiente PROD (destino final)",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "Nome ou ID do ambiente"
+        },
+        {
+          "id": "ConfirmacaoAmbientes",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "SIM",
+          "ajuda": "Confira os três ambientes e digite SIM. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-preflight.ps1",
+        "rotuloBotao": "Conferir",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "AmbienteDev", "AmbienteHml", "AmbienteProd", "ConfirmacaoAmbientes"],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler e administrar os ambientes do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gerenciados",
+      "titulo": "Tornar HML e PROD gerenciados",
+      "descricao": "O pipeline só implanta em ambientes gerenciados. Esta etapa torna HML e PROD gerenciados, se ainda não forem. Ambientes gerenciados exigem licença premium para os usuários. Pode pular se a conferência mostrou que os dois já são gerenciados.",
+      "situacao": {
+        "titulo": "Resultado da conferência",
+        "itens": [
+          { "rotulo": "DEV", "valor": "{{EstadoDev}}" },
+          { "rotulo": "HML", "valor": "{{EstadoHml}}" },
+          { "rotulo": "PROD", "valor": "{{EstadoProd}}" },
+          { "rotulo": "Gerenciados", "valor": "{{Gerenciados}}", "okQuando": ["HML e PROD gerenciados"], "alertaQuando": ["Falta"] },
+          { "rotulo": "Cross-Geo", "valor": "{{CrossGeo}}", "okQuando": ["Não necessário"], "alertaQuando": ["Necessário"] }
+        ]
+      },
+      "script": {
+        "arquivo": "scripts/03-gerenciados.ps1",
+        "rotuloBotao": "Tornar gerenciados",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "IdHml", "IdProd"],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler e administrar os ambientes do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pipeline",
+      "titulo": "Criar o pipeline",
+      "descricao": "O pipeline é criado na tela do Power Apps: o host da plataforma não permite criar pipelines por script. No host da plataforma o pipeline é pessoal (não dá para compartilhar) e tem até duas fases.",
+      "instrucoes": [
+        "Abra as soluções do DEV ({{NomeDev}}) pelo link abaixo. Crie uma solução (Nova solução) ou abra uma não gerenciada já existente.",
+        "No menu da solução, clique em Pipelines (ícone de foguete) e em Criar pipeline: dê um nome (ex.: Agentes IA) e escolha o destino {{NomeHml}}. Salve.",
+        "Com o pipeline selecionado, clique em Adicionar fase e escolha o destino final {{NomeProd}}. Salve.",
+        "Se o HML ou o PROD não aparecer na lista de destinos: em Gerenciar pipelines > Configurações avançadas, ligue Cross-Geo Solution Deployment, só com aprovação do CoE. A conferência indicou: {{CrossGeo}}."
+      ],
+      "links": [
+        { "rotulo": "Abrir as soluções do DEV", "url": "https://make.powerapps.com/environments/{{IdDev}}/solutions" }
+      ],
+      "confirmacao": "Criei o pipeline com as fases HML e PROD."
+    },
+    {
+      "id": "deployment",
+      "titulo": "Primeiro deployment",
+      "descricao": "Promova a solução do DEV para o HML pelo pipeline e, depois dos testes e do aceite, para o PROD.",
+      "instrucoes": [
+        "No DEV, abra a solução não gerenciada com o agente e as dependências. Use referências de conexão e variáveis de ambiente para o que muda entre DEV, HML e PROD.",
+        "Em Pipelines, clique em Implantar aqui na fase do HML. Revise as validações, informe as variáveis de ambiente e as conexões do HML e conclua.",
+        "Teste o agente, as conexões e os fluxos no HML ({{NomeHml}}) e registre o aceite.",
+        "Com o aceite registrado, implante na fase do PROD ({{NomeProd}}), revise os valores de PROD e faça o teste rápido do agente e das integrações."
+      ],
+      "links": [
+        { "rotulo": "Abrir as soluções do DEV", "url": "https://make.powerapps.com/environments/{{IdDev}}/solutions" },
+        { "rotulo": "Abrir as soluções do HML", "url": "https://make.powerapps.com/environments/{{IdHml}}/solutions" }
+      ],
+      "confirmacao": "Fiz o deployment do DEV para o HML pelo pipeline e conferi a solução no HML."
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "DEV", "valor": "{{EstadoDev}}" },
+      { "rotulo": "HML", "valor": "{{EstadoHml}}" },
+      { "rotulo": "PROD", "valor": "{{EstadoProd}}" },
+      { "rotulo": "Cross-Geo", "valor": "{{CrossGeo}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir as soluções do DEV", "url": "https://make.powerapps.com/environments/{{IdDev}}/solutions" }
+    ]
+  }
+}

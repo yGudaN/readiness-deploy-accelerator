@@ -1,0 +1,175 @@
+{
+  "id": "edge-copilot",
+  "nome": "Edge abrindo no Microsoft 365 Copilot",
+  "categoria": "Experiência",
+  "versao": "1.0.0",
+  "resumo": "Política do Intune que faz a página inicial e a nova guia do Edge abrirem no Microsoft 365 Copilot.",
+  "descricao": "Cria no Microsoft Intune uma política para o Microsoft Edge no Windows que aponta o botão Página inicial e as novas guias para o Microsoft 365 Copilot. A política nasce sem atribuição, sem efeito nos dispositivos, para revisão. Depois você pode atribuí-la a um grupo piloto, remover as atribuições ou excluí-la. Abrir o Copilot sozinho ao iniciar o Edge depende de outra política e não faz parte deste item. Começa consultando o tenant, não cria a política duas vezes e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Uma política do Intune para o Edge no Windows: página inicial e nova guia no Microsoft 365 Copilot, sem atribuição",
+    "Opcional: atribuir a um grupo piloto, remover as atribuições ou excluir a política",
+    "Requer licença do Microsoft Intune"
+  ],
+  "tempoEstimadoMin": 10,
+  "papeisNecessarios": [
+    "Administrador Global ou Administrador do Intune"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o tenant",
+      "descricao": "Somente leitura: confere a conta, a função, a licença do Intune e as políticas do Edge já criadas por este item. Nada é alterado.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/DeviceManagementConfiguration.ReadWrite.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read",
+            "proposito": "Ler e configurar as políticas do Microsoft Intune"
+          }
+        ]
+      }
+    },
+    {
+      "id": "criar",
+      "titulo": "Criar a política",
+      "descricao": "Cria a política sem atribuição e confere os dois valores lendo de volta. Se a política deste item já existe com o mesmo nome, nada é criado.",
+      "situacao": {
+        "titulo": "Situação atual no tenant",
+        "itens": [
+          { "rotulo": "Licença do Microsoft Intune", "valor": "{{LicencaIntune}}", "okQuando": ["Encontrada"], "alertaQuando": ["Não encontrada"] },
+          { "rotulo": "Sua função", "valor": "{{FuncaoIntune}}", "alertaQuando": ["Sem a função"] },
+          { "rotulo": "Políticas deste item", "valor": "{{EstadoPolitica}}", "alertaQuando": ["Bloqueado"] }
+        ],
+        "nota": "Sem licença do Intune (Intune Plan 1, EMS, Microsoft 365 E3/E5 ou Business Premium), a política não pode ser criada. A mobilidade básica do Office 365 não basta."
+      },
+      "campos": [
+        {
+          "id": "CopilotUrl",
+          "rotulo": "Endereço do Microsoft 365 Copilot",
+          "tipo": "url",
+          "obrigatorio": true,
+          "padrao": "https://copilot.cloud.microsoft/",
+          "ajuda": "Abre no botão Página inicial e em cada nova guia do Edge."
+        },
+        {
+          "id": "NomePolitica",
+          "rotulo": "Nome da política no Intune",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Edge - Microsoft 365 Copilot",
+          "padraoRegex": "^.{3,100}$",
+          "mensagemRegex": "Use de 3 a 100 caracteres."
+        },
+        {
+          "id": "ConfirmacaoCriar",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "CRIAR",
+          "ajuda": "Revise os valores e digite CRIAR. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-criar.ps1",
+        "rotuloBotao": "Criar a política",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "CopilotUrl", "NomePolitica", "ConfirmacaoCriar"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/DeviceManagementConfiguration.ReadWrite.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read",
+            "proposito": "Ler e configurar as políticas do Microsoft Intune"
+          }
+        ]
+      }
+    },
+    {
+      "id": "atribuicao",
+      "titulo": "Atribuir, desabilitar ou excluir (opcional)",
+      "descricao": "Atribua a política a um grupo de segurança piloto para que os dispositivos do grupo a recebam, remova as atribuições para tirar o efeito sem excluir, ou exclua a política. Pode pular esta etapa e deixar a política sem atribuição.",
+      "situacao": {
+        "titulo": "Situação atual",
+        "itens": [
+          { "rotulo": "Política", "valor": "{{EstadoPolitica}}" }
+        ]
+      },
+      "campos": [
+        {
+          "id": "AcaoAtribuicao",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "atribuir",
+          "opcoes": [
+            { "valor": "atribuir", "rotulo": "Atribuir a um grupo piloto", "descricao": "Os dispositivos Windows do grupo passam a receber a política." },
+            { "valor": "remover", "rotulo": "Desabilitar (remover as atribuições)", "descricao": "Tira o efeito nos dispositivos e mantém a política." },
+            { "valor": "excluir", "rotulo": "Excluir a política", "descricao": "Apaga a política criada por este item." }
+          ]
+        },
+        {
+          "id": "GrupoPiloto",
+          "rotulo": "Grupo piloto (só para atribuir)",
+          "tipo": "guid",
+          "placeholder": "Object ID do grupo no Microsoft Entra ID"
+        },
+        {
+          "id": "ConfirmacaoAtribuicao",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Digite CONFIRMO. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-atribuicao.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "NomePolitica", "AcaoAtribuicao", "GrupoPiloto", "ConfirmacaoAtribuicao"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@graph-cli",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/DeviceManagementConfiguration.ReadWrite.All https://graph.microsoft.com/Organization.Read.All https://graph.microsoft.com/RoleManagement.Read.Directory https://graph.microsoft.com/Group.Read.All https://graph.microsoft.com/User.Read",
+            "proposito": "Ler e configurar as políticas do Microsoft Intune"
+          }
+        ]
+      }
+    },
+    {
+      "id": "validar",
+      "titulo": "Conferir num dispositivo (opcional)",
+      "descricao": "Depois de atribuir a um grupo piloto, confira num dispositivo do grupo.",
+      "instrucoes": [
+        "No dispositivo Windows do grupo piloto, sincronize no Portal da Empresa ou em Configurações > Contas > Acessar trabalho ou escola > Informações > Sincronizar.",
+        "No Edge, abra edge://policy e clique em Recarregar políticas. Confira HomepageLocation e NewTabPageLocation com o endereço do Copilot.",
+        "Abra uma nova guia e clique no botão Página inicial: os dois devem abrir o Microsoft 365 Copilot."
+      ],
+      "links": [
+        { "rotulo": "Abrir as políticas de configuração no Intune", "url": "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/configuration" }
+      ],
+      "confirmacao": "Conferi no dispositivo (ou não atribuí a política)."
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Política", "valor": "{{EstadoPolitica}}" },
+      { "rotulo": "Endereço", "valor": "{{CopilotUrl}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir as políticas de configuração no Intune", "url": "https://intune.microsoft.com/#view/Microsoft_Intune_DeviceSettings/DevicesMenu/~/configuration" }
+    ]
+  }
+}

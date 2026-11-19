@@ -29,6 +29,11 @@ export interface CampoDef {
   /** Regex extra de validacao (alem da validacao do tipo). */
   padraoRegex?: string
   mensagemRegex?: string
+  /**
+   * Id de um valor ja preenchido (em geral uma saida de script) com uma lista separada por "; ".
+   * O campo de texto mostra esses itens como sugestoes enquanto a pessoa digita.
+   */
+  sugestoesDe?: string
 }
 
 export interface ArquivoDef {
@@ -147,6 +152,8 @@ export interface ModuloManifesto {
   resumo: string
   /** Grupo do item no catalogo (uma das CATEGORIAS, na ordem em que aparecem). */
   categoria?: Categoria
+  /** true = o item ainda nao foi testado num tenant real (o catalogo mostra a etiqueta "Testar"). */
+  testar?: boolean
   /** O que e e para que serve (aparece ao expandir o item no catalogo). */
   descricao: string
   /** O que sera criado ou instalado no tenant, um item por linha. */

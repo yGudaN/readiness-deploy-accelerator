@@ -116,7 +116,7 @@ function New-BizappEvidencias {
 function Export-BizappEvidencia {
     <# Grava um CSV na pasta de evidencias (mesmo formato dos scripts validados no laboratorio). #>
     param([Parameter(Mandatory)][string]$Pasta, [Parameter(Mandatory)][string]$Nome, [Parameter(Mandatory)][AllowEmptyCollection()][object]$Dados)
-    @($Dados) | Export-Csv -LiteralPath (Join-Path $Pasta $Nome) -NoTypeInformation -Encoding utf8
+    @($Dados) | Export-Csv -LiteralPath (Join-Path $Pasta $Nome) -Encoding utf8
 }
 
 Export-ModuleMember -Function Read-BizappEntrada, Write-BizappLog, Write-BizappProgresso, Set-BizappSaida, Assert-BizappEntrada, Get-BizappToken, `

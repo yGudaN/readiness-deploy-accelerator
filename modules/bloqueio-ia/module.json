@@ -1,0 +1,178 @@
+{
+  "id": "bloqueio-ia",
+  "nome": "Bloqueio de IA não corporativa",
+  "categoria": "Segurança e conformidade",
+  "versao": "1.0.0",
+  "resumo": "Bloqueia ou avisa o acesso a serviços de IA não corporativos, como o ChatGPT, pelo Microsoft Defender for Endpoint.",
+  "descricao": "Cria indicadores de domínio no Microsoft Defender for Endpoint para bloquear, ou só avisar, o acesso a serviços de IA não corporativos nos dispositivos gerenciados pelo Defender. Começa só consultando. O bloqueio exige justificativa, confirmação e data de expiração, e pode ficar restrito a grupos de dispositivos. Só os indicadores criados por este item podem ser removidos, e indicadores de outra origem nunca são alterados. Guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Um app no Entra ID para acessar o Defender (sem segredo nem certificado)",
+    "Consulta dos indicadores dos domínios informados (somente leitura)",
+    "Opcional: bloqueio ou aviso por domínio, com expiração; remoção dos indicadores deste item",
+    "Requer Microsoft Defender for Endpoint (Microsoft 365 E5, Defender for Endpoint P2 ou Defender for Business)"
+  ],
+  "tempoEstimadoMin": 10,
+  "papeisNecessarios": [
+    "Administrador de Aplicativos ou Administrador Global (para registrar o app)",
+    "Função do Microsoft Defender que gerencie indicadores (RBAC do Defender)"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "app",
+      "titulo": "Registrar o app do Defender",
+      "descricao": "Cria no Entra ID o app que o instalador usa para falar com o Defender, com a permissão delegada de ler e escrever indicadores. Se o app já existe, informe o ID dele e pule o registro. Se o tenant não tem o Defender for Endpoint, nada é criado.",
+      "campos": [
+        {
+          "id": "AppName",
+          "rotulo": "Nome do app",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "Readiness Deploy Accelerator - Defender"
+        },
+        {
+          "id": "DefenderClientId",
+          "rotulo": "ID do app (preenchido ao registrar)",
+          "tipo": "guid",
+          "obrigatorio": true,
+          "placeholder": "Preenchido pelo registro, ou cole o ID de um app já existente",
+          "ajuda": "Application (client) ID do app no Entra ID."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-registrar-app.ps1",
+        "rotuloBotao": "Registrar o app",
+        "obrigatorio": false,
+        "entradas": ["AppName"],
+        "tokens": [
+          {
+            "nome": "Graph",
+            "clientId": "@azure-powershell",
+            "tenant": "organizations",
+            "escopo": "https://graph.microsoft.com/.default",
+            "proposito": "Criar o app no Entra ID"
+          }
+        ]
+      }
+    },
+    {
+      "id": "consultar",
+      "titulo": "Consultar os domínios",
+      "descricao": "Somente leitura: mostra se os domínios já têm indicador no Defender, de que tipo e de quem. Nada é alterado. No primeiro login com o app, aceite as permissões para a organização.",
+      "situacao": {
+        "titulo": "Situação atual",
+        "itens": [
+          { "rotulo": "Microsoft Defender for Endpoint", "valor": "{{DefenderNoTenant}}", "okQuando": ["Encontrado"], "alertaQuando": ["Não encontrado"] }
+        ]
+      },
+      "campos": [
+        {
+          "id": "Dominios",
+          "rotulo": "Domínios",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "padrao": "chatgpt.com",
+          "placeholder": "chatgpt.com; gemini.google.com",
+          "ajuda": "Separe vários domínios com ponto e vírgula. A lista de serviços a bloquear deve ser aprovada pela área de Segurança."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "DefenderClientId", "Dominios"],
+        "tokens": [
+          {
+            "nome": "Defender",
+            "clientId": "{{DefenderClientId}}",
+            "tenant": "organizations",
+            "escopo": "https://api.securitycenter.microsoft.com/.default",
+            "proposito": "Ler e gerenciar indicadores no Microsoft Defender"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aplicar",
+      "titulo": "Bloquear, avisar ou remover (opcional)",
+      "descricao": "Bloquear impede o acesso; avisar mostra um alerta e deixa o usuário seguir. Os dois expiram na data definida. Remover apaga só os indicadores criados por este item. Precisa da aprovação da área de Segurança. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual",
+        "itens": [
+          { "rotulo": "Indicadores", "valor": "{{EstadoBloqueio}}" }
+        ],
+        "nota": "O bloqueio só vale em dispositivos com o Defender for Endpoint e com os indicadores de rede personalizados ligados no portal do Defender (Configurações > Endpoints > Recursos avançados). Sem grupos de dispositivos, vale para todos os dispositivos."
+      },
+      "campos": [
+        {
+          "id": "AcaoBloqueio",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "avisar",
+          "opcoes": [
+            { "valor": "avisar", "rotulo": "Avisar", "descricao": "Mostra um alerta e deixa o usuário continuar. Bom para começar." },
+            { "valor": "bloquear", "rotulo": "Bloquear", "descricao": "Impede o acesso aos domínios." },
+            { "valor": "remover", "rotulo": "Remover", "descricao": "Apaga os indicadores criados por este item." }
+          ]
+        },
+        {
+          "id": "ExpiracaoDias",
+          "rotulo": "Expira em (dias)",
+          "tipo": "texto",
+          "padrao": "30",
+          "padraoRegex": "^([1-9][0-9]?|[12][0-9]{2}|3[0-5][0-9]|36[0-5])?$",
+          "mensagemRegex": "Use de 1 a 365 dias."
+        },
+        {
+          "id": "GruposDispositivos",
+          "rotulo": "Grupos de dispositivos (opcional)",
+          "tipo": "texto",
+          "placeholder": "Piloto IA; TI",
+          "ajuda": "Nomes dos grupos de dispositivos do Defender, separados por ponto e vírgula. Em branco: todos os dispositivos."
+        },
+        {
+          "id": "Justificativa",
+          "rotulo": "Justificativa",
+          "tipo": "texto",
+          "placeholder": "Ex.: Política de IA aprovada pela Segurança em 10/11",
+          "ajuda": "Gravada no indicador e nas evidências."
+        },
+        {
+          "id": "ConfirmacaoBloqueio",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Digite CONFIRMO. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-aplicar.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "DefenderClientId", "Dominios", "AcaoBloqueio", "ExpiracaoDias", "GruposDispositivos", "Justificativa", "ConfirmacaoBloqueio"],
+        "tokens": [
+          {
+            "nome": "Defender",
+            "clientId": "{{DefenderClientId}}",
+            "tenant": "organizations",
+            "escopo": "https://api.securitycenter.microsoft.com/.default",
+            "proposito": "Ler e gerenciar indicadores no Microsoft Defender"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Indicadores", "valor": "{{EstadoBloqueio}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir os indicadores no Microsoft Defender", "url": "https://security.microsoft.com/securitysettings/endpoints/custom_ti_indicators" }
+    ]
+  }
+}

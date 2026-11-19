@@ -1,0 +1,173 @@
+{
+  "id": "mcp-agentes",
+  "nome": "MCP e recursos para agentes",
+  "categoria": "Agentes e ALM",
+  "versao": "1.0.0",
+  "resumo": "Confere e controla quais clientes de MCP acessam o Dataverse de um ambiente e valida o MCP do Dataverse num agente.",
+  "descricao": "Prepara um ambiente com Dataverse para agentes que usam MCP (Model Context Protocol). Começa consultando, sem alterar nada: o papel da conta, quais clientes de MCP podem acessar o Dataverse do ambiente (Copilot Studio, GitHub Copilot e outros), os conectores personalizados do ambiente e as políticas de DLP do tenant. Depois permite liberar ou bloquear um cliente, com confirmação, e acompanha a validação do servidor MCP do Dataverse num agente de teste no Copilot Studio. Conector MCP personalizado e classificação na DLP ficam como orientação. Guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta do ambiente, dos clientes de MCP, dos conectores personalizados e das políticas de DLP (somente leitura)",
+    "Opcional: liberar ou bloquear um cliente de MCP no ambiente",
+    "Validação guiada do servidor MCP do Dataverse num agente de teste do Copilot Studio",
+    "Orientações para conector MCP personalizado e classificação na DLP"
+  ],
+  "tempoEstimadoMin": 20,
+  "papeisNecessarios": [
+    "Administrador do sistema no ambiente, Administrador do Power Platform ou Administrador Global",
+    "Licença ou acesso de criador no Copilot Studio para a validação"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar o ambiente",
+      "descricao": "Somente leitura: confere o ambiente e o papel da conta, lista os clientes de MCP que podem acessar o Dataverse, os conectores personalizados do ambiente e as políticas de DLP do tenant. Nada é alterado.",
+      "campos": [
+        {
+          "id": "EnvironmentUrl",
+          "rotulo": "URL do ambiente (Dataverse)",
+          "tipo": "url",
+          "obrigatorio": true,
+          "placeholder": "https://orgxxxxxxx.crm.dynamics.com",
+          "ajuda": "No Power Platform admin center: Ambientes > ambiente > URL do ambiente. Ou em make.powerapps.com: engrenagem > Detalhes da sessão > URL da instância.",
+          "padraoRegex": "^https://[A-Za-z0-9-]+\\.crm[0-9]*\\.dynamics\\.com/?$",
+          "mensagemRegex": "Informe a URL do Dataverse, ex.: https://org1234567.crm.dynamics.com"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["EnvironmentUrl"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler as políticas de DLP da Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "clientes",
+      "titulo": "Clientes de MCP (opcional)",
+      "descricao": "Libera ou bloqueia um cliente de MCP no Dataverse deste ambiente. Pule esta etapa se a lista já está como você quer. Os clientes do Copilot Studio não são bloqueados por aqui.",
+      "situacao": {
+        "titulo": "Situação atual no ambiente",
+        "itens": [
+          { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+          { "rotulo": "Sua conta", "valor": "{{PapelAdmin}}", "okQuando": ["Administrador do sistema"], "alertaQuando": ["Sem o papel"] },
+          { "rotulo": "Clientes liberados", "valor": "{{ClientesLiberados}}" },
+          { "rotulo": "Clientes bloqueados", "valor": "{{ClientesBloqueados}}" },
+          { "rotulo": "Conectores personalizados", "valor": "{{Conectores}}" },
+          { "rotulo": "Políticas de DLP no tenant", "valor": "{{PoliticasDlp}}", "alertaQuando": ["Nenhuma", "Não foi possível"] }
+        ],
+        "nota": "Libere só os clientes que a empresa aprovou. Para clientes fora do Copilot Studio, o MCP do Dataverse também precisa estar permitido nas configurações do ambiente."
+      },
+      "campos": [
+        {
+          "id": "ClienteMcp",
+          "rotulo": "Cliente",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "Microsoft GitHub Copilot App",
+          "ajuda": "Copie o nome de um cliente da situação acima."
+        },
+        {
+          "id": "AcaoCliente",
+          "rotulo": "O que fazer",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "liberar",
+          "opcoes": [
+            { "valor": "liberar", "rotulo": "Liberar", "descricao": "O cliente passa a poder acessar o Dataverse do ambiente, com as permissões de quem estiver conectado." },
+            { "valor": "bloquear", "rotulo": "Bloquear", "descricao": "O cliente deixa de acessar o Dataverse do ambiente." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoClientes",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "CONFIRMO",
+          "ajuda": "Revise o cliente e a ação e digite CONFIRMO. O campo é limpo depois de cada execução."
+        }
+      ],
+      "links": [
+        { "rotulo": "Abrir as configurações do ambiente", "url": "https://admin.powerplatform.microsoft.com/manage/environments/environment/{{EnvironmentId}}/settings/Features" }
+      ],
+      "script": {
+        "arquivo": "scripts/02-clientes.ps1",
+        "rotuloBotao": "Aplicar",
+        "obrigatorio": false,
+        "entradas": ["EnvironmentUrl", "TenantId", "Conta", "ClienteMcp", "AcaoCliente", "ConfirmacaoClientes"],
+        "tokens": [
+          {
+            "nome": "Dataverse",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "{{EnvironmentUrl}}/.default",
+            "proposito": "Acessar o ambiente do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "validar",
+      "titulo": "Validar num agente de teste",
+      "descricao": "Confira na prática que um agente do Copilot Studio consegue ler o Dataverse pelo MCP e não altera dados.",
+      "instrucoes": [
+        "Em copilotstudio.microsoft.com, no ambiente {{NomeAmbiente}}, crie um agente de teste. Não publique.",
+        "Ferramentas > Adicionar ferramenta > Model Context Protocol > Dataverse MCP Server. Crie a conexão com a sua conta.",
+        "Deixe ativas só as ferramentas de leitura (listar tabelas, descrever tabela e consultar). Desative as de criar e alterar registros.",
+        "No painel de teste, pergunte: \"Quais tabelas existem neste ambiente do Dataverse?\". Ele deve listar as tabelas.",
+        "Pergunte: \"Descreva a estrutura da tabela Conta: quais colunas ela tem?\". Ele deve mostrar as colunas.",
+        "Pergunte: \"Liste 3 contas, mostrando só o nome.\". Ele deve trazer no máximo 3 registros, só com o nome.",
+        "Pergunte: \"Crie uma conta chamada Teste MCP\". O pedido deve ser recusado ou ficar indisponível. Se a conta for criada, apague-a e revise as ferramentas ativas.",
+        "Em cada resposta, abra a atividade e confira a ferramenta usada, os argumentos e o resultado. Depois remova o MCP e o agente de teste, se não for usar."
+      ],
+      "links": [
+        { "rotulo": "Abrir o Copilot Studio", "url": "https://copilotstudio.microsoft.com/environments/{{EnvironmentId}}/home" }
+      ],
+      "confirmacao": "Conferi as quatro perguntas no agente de teste e a alteração não foi feita."
+    },
+    {
+      "id": "orientacoes",
+      "titulo": "Conector MCP personalizado e DLP",
+      "descricao": "Quando a empresa quiser usar um servidor MCP próprio ou de terceiros nos agentes. Estes passos são feitos à mão, com aprovação de Segurança.",
+      "instrucoes": [
+        "Confirme com Segurança o servidor MCP: dono, URL, autenticação, quais dados ele lê e grava e em que ambiente vai ser usado.",
+        "No Copilot Studio, em Ferramentas > Adicionar ferramenta > Model Context Protocol > Novo servidor MCP, informe a URL e a autenticação. Isso cria um conector personalizado no ambiente.",
+        "No Power Platform admin center, em Segurança > Políticas de dados, coloque o conector novo no grupo certo (Comercial ou Não comercial) da política que cobre este ambiente. Sem política de DLP, qualquer conector fica liberado.",
+        "Teste num agente de laboratório antes de liberar para outros criadores e registre a aprovação."
+      ],
+      "links": [
+        { "rotulo": "Abrir as políticas de dados", "url": "https://admin.powerplatform.microsoft.com/security/dataprotection" },
+        { "rotulo": "Abrir o Copilot Studio", "url": "https://copilotstudio.microsoft.com/environments/{{EnvironmentId}}/home" }
+      ]
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+      { "rotulo": "Clientes de MCP liberados", "valor": "{{ClientesLiberados}}" },
+      { "rotulo": "Clientes de MCP bloqueados", "valor": "{{ClientesBloqueados}}" },
+      { "rotulo": "Políticas de DLP", "valor": "{{PoliticasDlp}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir o Copilot Studio", "url": "https://copilotstudio.microsoft.com/environments/{{EnvironmentId}}/home" }
+    ]
+  }
+}

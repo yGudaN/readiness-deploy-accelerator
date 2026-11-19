@@ -1,0 +1,164 @@
+{
+  "id": "copilot-credits",
+  "nome": "Alocação de Copilot Credits",
+  "categoria": "Custos e consumo (FinOps)",
+  "versao": "1.0.0",
+  "resumo": "Consulta os Copilot Credits disponíveis e aloca uma quantidade para um ambiente.",
+  "descricao": "Consulta quantos Copilot Credits o tenant tem disponíveis para alocar e reserva uma quantidade para um ambiente do Power Platform. Você também define o que acontece quando a alocação do ambiente se esgota: continuar usando a capacidade não alocada do tenant ou parar. Segue o script validado do COE e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "Consulta dos Copilot Credits disponíveis para o ambiente (somente leitura)",
+    "Opcional: alocação de Copilot Credits para o ambiente escolhido",
+    "Requer Copilot Credits comprados (pacotes pré-pagos) no tenant"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador do Power Platform ou Administrador Global"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "ambientes",
+      "titulo": "Listar os ambientes",
+      "descricao": "Somente leitura: confere a conta e o tenant e lista os ambientes do Power Platform. Nada é alterado.",
+      "script": {
+        "arquivo": "scripts/01-ambientes.ps1",
+        "rotuloBotao": "Listar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler os ambientes do Power Platform"
+          }
+        ]
+      }
+    },
+    {
+      "id": "consultar",
+      "titulo": "Consultar os créditos disponíveis",
+      "descricao": "Informe o ambiente. O instalador mostra quantos Copilot Credits estão disponíveis para alocar. Nada é alterado.",
+      "situacao": {
+        "titulo": "Ambientes do tenant",
+        "itens": [
+          { "rotulo": "Ambientes encontrados", "valor": "{{QtdAmbientes}}" }
+        ]
+      },
+      "campos": [
+        {
+          "id": "Ambiente",
+          "rotulo": "Ambiente",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "Comece a digitar o nome do ambiente",
+          "ajuda": "Digite parte do nome e escolha na lista que aparece, ou cole o Environment ID.",
+          "sugestoesDe": "ListaAmbientes"
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "Ambiente"],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler os ambientes do Power Platform"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://api.powerplatform.com/.default",
+            "proposito": "Consultar e alocar Copilot Credits"
+          }
+        ]
+      }
+    },
+    {
+      "id": "alocar",
+      "titulo": "Alocar Copilot Credits",
+      "descricao": "Define quantos Copilot Credits ficam reservados para o ambiente (o valor substitui a alocação atual) e confere lendo a alocação do ambiente de novo. A quantidade não pode passar do disponível. Pode pular esta etapa.",
+      "situacao": {
+        "titulo": "Situação atual",
+        "itens": [
+          { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+          { "rotulo": "Já alocado neste ambiente", "valor": "{{AlocadoAtual}}" },
+          { "rotulo": "Quando a alocação se esgotar", "valor": "{{TenantPoolAtual}}" },
+          { "rotulo": "Disponíveis para alocar", "valor": "{{CreditosDisponiveis}}", "alertaQuando": ["Não encontrado", "0"] },
+          { "rotulo": "Última alocação", "valor": "{{EstadoAlocacao}}" }
+        ],
+        "nota": "O número disponível para alocar pode não mudar logo depois da alocação: confira pelo valor já alocado no ambiente. Se uma regra de grupo de ambientes controlar o uso da capacidade do tenant, o Power Platform recusa a alteração."
+      },
+      "campos": [
+        {
+          "id": "Quantidade",
+          "rotulo": "Quantidade de Copilot Credits a alocar",
+          "tipo": "texto",
+          "placeholder": "Ex.: 5000",
+          "padraoRegex": "^([0-9]{1,9})?$",
+          "mensagemRegex": "Use só números, sem ponto (ex.: 5000)."
+        },
+        {
+          "id": "TenantPool",
+          "rotulo": "Quando a alocação se esgotar",
+          "tipo": "escolha",
+          "obrigatorio": true,
+          "padrao": "nao",
+          "opcoes": [
+            { "valor": "nao", "rotulo": "Parar no limite alocado", "descricao": "O ambiente fica limitado à sua alocação." },
+            { "valor": "sim", "rotulo": "Continuar usando a capacidade do tenant", "descricao": "Depois de esgotar a alocação, o ambiente consome a capacidade não alocada do tenant." }
+          ]
+        },
+        {
+          "id": "ConfirmacaoAlocar",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "ALOCAR",
+          "ajuda": "Revise os valores e digite ALOCAR. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/03-alocar.ps1",
+        "rotuloBotao": "Alocar",
+        "obrigatorio": false,
+        "entradas": ["TenantId", "Conta", "IdAmbiente", "NomeAmbiente", "Quantidade", "TenantPool", "ConfirmacaoAlocar"],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler os ambientes do Power Platform"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://api.powerplatform.com/.default",
+            "proposito": "Consultar e alocar Copilot Credits"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Ambiente", "valor": "{{NomeAmbiente}}" },
+      { "rotulo": "Copilot Credits disponíveis", "valor": "{{CreditosDisponiveis}}" },
+      { "rotulo": "Alocação", "valor": "{{EstadoAlocacao}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir o licenciamento do Copilot Studio no admin center", "url": "https://admin.powerplatform.microsoft.com/billing/licenses/copilotStudio/overview" }
+    ]
+  }
+}

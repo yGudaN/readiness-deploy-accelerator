@@ -17,6 +17,100 @@ Decisões em aberto com o time do COE. Não fazem parte do instalador até serem
 
 **Observação:** o roteamento ficou ligado no tenant de demo (crm202149) depois do teste.
 
+## Guia de automações (18/11/2026)
+
+O `originais/guia-automacoes-readiness-v2.html` trouxe os scripts completos dos itens 12, 26, 27 e 35, salvos em `originais/`:
+- `12-mcps-recursos-agentes.ps1` (v3): base do teste `Teste-AUTO12.ps1`.
+- `26-navegadores-m365-copilot.ps1` (v8, o validado no relatório): confere com o item do instalador (mesmos IDs, opção `_1` e corpo). Ajuste na v1.14.1: o instalador passou a mandar os mesmos `@odata.type` da v8 no valor de escolha e na atribuição. A v8 usa IDs fixos e o prefixo LAB-AUTO26; o instalador lê os IDs no catálogo e marca a política na descrição.
+- `27-bloqueio-ia-nao-corporativa.ps1` (versão segura 1.2, só GET): confere com o item do instalador (mesmo endpoint, escopo `api.securitycenter.microsoft.com` e permissão `Ti.ReadWrite`). O guia confirma que não há script de escrita aprovado: bloquear e remover no instalador continuam sem base testada.
+- `35-instalar-powerbi-kpis-guia.ps1`: mesmo código do relatório (só muda a quebra de um comentário). Os scripts de inventário do item 35 também não vieram no guia.
+
+## MCP e recursos para agentes (AUTO-12): testar pelo instalador
+
+**Situação:** relatório (`originais/12-mcps-relatorio.docx`) e script v3 do guia (`originais/12-mcps-recursos-agentes.ps1`). Teste manual `Teste-AUTO12.ps1` aprovado em 18/11/2026 no CRM332072: Validar e Consultar do original, leitura dos 8 clientes de MCP do ambiente (tabela `allowedmcpclient`; GitHub Copilot e Dataverse MCP CLI bloqueados) e as quatro perguntas no Copilot Studio (a criação de registro não foi feita). Obs.: no Windows PowerShell 5.1, o login interativo do Graph derruba o processo se não for concluído em 2 minutos; o teste passou a usar código de dispositivo.
+
+**No instalador (v1.15.0, item `mcp-agentes`):**
+- Consultar (somente leitura, Web API do Dataverse): papel da conta, clientes de MCP (tabela `allowedmcpclient`, nome do conjunto lido nos metadados), conectores do ambiente (tabela `connector`) e políticas de DLP do tenant (mesma API do item 20).
+- Clientes (opcional): libera ou bloqueia um cliente (`PATCH isenabled`) com CONFIRMO e confere relendo. Clientes do Copilot Studio (`microsoftcopilotstudio*`) não são bloqueados por aqui.
+- Validação guiada no Copilot Studio (as quatro perguntas) e orientações para conector MCP personalizado e DLP (o autor não executou essas partes).
+
+**Para testar:** rodar o item pelo instalador no CRM332072; liberar e depois bloquear de novo o Microsoft GitHub Copilot App e conferir em Configurações > Produto > Recursos > Dataverse MCP > Configurações avançadas.
+
+## Bloqueio de IA não corporativa (AUTO-27): validado
+
+**Teste pelo instalador (18/11/2026, tenant Bizapp, v1.15.2):** o admin do tenant rodou o item e deu certo. Etiqueta "Testar" retirada na v1.15.3.
+
+**Situação:** veio só o relatório (`originais/27-bloqueio-ia-relatorio.docx`). Na prova do autor, login e token (app próprio, delegado `Ti.ReadWrite`) funcionaram, mas a primeira consulta (`GET /api/indicators`) deu **403 por RBAC do Defender**; criar e remover não foram testados, por decisão de Segurança. O script não veio. O tenant de demo tem Office 365 E5, sem Defender for Endpoint.
+
+**No instalador (v1.14.0), sem teste real, seguindo as recomendações do relatório:** registra um app no Entra ID (cliente público, `http://localhost`, delegado `WindowsDefenderATP/Ti.ReadWrite`, sem segredo; se a API do Defender não existe no tenant, nada é criado), consulta só com GET, e a etapa opcional de mudança exige CONFIRMO, justificativa e expiração (1 a 365 dias): avisar (`Warn`, padrão) ou bloquear (`Block`) por domínio, com grupos de dispositivos opcionais; remover apaga só indicadores com a marca "Criado pelo Readiness Deploy Accelerator". Indicadores de outra origem nunca são alterados. Token com escopo `https://api.securitycenter.microsoft.com/.default` (a documentação avisa que essa API recusa outros públicos com 403).
+
+**Para testar:** num tenant com Defender for Endpoint, com uma conta que tenha função do Defender para gerenciar indicadores (RBAC) e com os indicadores de rede personalizados ligados: registrar o app, aceitar as permissões no primeiro login, consultar `chatgpt.com`, avisar com expiração curta num grupo piloto, conferir em `security.microsoft.com` e remover.
+
+## Power BI de KPIs (AUTO-35): testar pelo instalador
+
+**Situação:** o relatório (`originais/35-power-bi-relatorio.docx`) aprovou o readiness e deixou pendentes os dois testes de instalação do PBIX, por falta do BI "tudo em 1". O script proposto no relatório foi extraído sem alterações para `originais/35-instalar-powerbi-kpis.ps1`.
+
+**Teste manual (17/11/2026, CRM332072, workspace LAB-AUTO35):** com PBIX de teste (`Cowork Chargeback.pbix` e `NEW - AI-in-One.pbix`), publicação inicial aprovada e atualização com CreateOrOverwrite aprovada: continuou 1 relatório, com o mesmo ID. Relatórios de teste ficaram no workspace LAB-AUTO35 (excluir quando não precisar).
+
+**No instalador (v1.13.0):** mesma lógica (validar o PBIX e o workspace, relatórios antes/depois, CreateOrOverwrite, conferir 1 relatório com o nome do arquivo e, na atualização, o mesmo ID), pela API REST do Power BI (`/groups/{id}/imports?nameConflict=CreateOrOverwrite`) com o login do instalador (cliente do Azure PowerShell, escopo do Power BI), em vez do módulo MicrosoftPowerBIMgmt. O caminho do PBIX é um campo; quando o PBIX oficial existir, ele pode vir dentro do instalador.
+
+**O que não foi testado:** o item pelo instalador (login do Azure PowerShell no Power BI e importação pela API REST); PBIX acima de 1 GB (recusado, publicar pelo Desktop). Ficaram fora: os inventários de readiness do relatório (Power BI, PPAC, Microsoft 365, Agent 365), cujos scripts não vieram.
+
+## Itens com a etiqueta "Testar"
+
+Itens que entraram no instalador sem teste num tenant real levam `"testar": true` no `module.json`, e o catálogo mostra a etiqueta "Testar". Hoje: nenhum. Tirar a marca quando o teste passar.
+
+## Inventário PAYG do Copilot Studio (AUTO-04): validado
+
+**Teste pelo instalador (18/11/2026, tenant Bizapp):** 81 ambientes, 1 Billing Policy (MSAzureSponsorshipCopilotStudio, estado `DisabledBySubscription`) vinculada ao Bizapp POC, com 180.500 Copilot Credits. Na v1.15.4 o resumo passou a mostrar o estado de cada plano em texto (antes aparecia só "0 ativas") e avisa quando a assinatura do Azure desativou o plano. Etiqueta "Testar" retirada na v1.15.4.
+
+**Situação:** script do COE somente leitura (`originais/04-inventario-payg.ps1`, COE-IA-010) e roteiro (`originais/04-inventario-payg-roteiro.docx`). Levado ao instalador sem teste (v1.12.0), a pedido, porque o tenant de demo não tem Copilot Credits nem plano de pagamento por uso.
+
+**O que mudou para caber no instalador:** logins do instalador (sem Az.Accounts e Add-PowerAppsAccount); o CSV `COE-IA-010_Inventario_PAYG.csv` vai sempre para a pasta de evidências, em vez da pergunta. Mesmas chamadas e mesma tabela: `licensing/billingPolicies` (paginado), `billingPolicies/{id}/environments`, nomes dos ambientes pela lista do admin e `allocationsV2/availability` com MCSMessages; só GET (conferido com dados simulados).
+
+**Teste parcial (17/11/2026, CRM332072, v1.12.0):** login, permissão e leitura funcionaram; o tenant não tem plano de pagamento por uso e o item respondeu "Nenhuma Billing Policy PAYG encontrada".
+
+**Para testar:** como é só leitura, dá para rodar no tenant de demo (deve dizer "Nenhuma Billing Policy PAYG encontrada", o que já testa login e permissão) e, num tenant com plano de pagamento por uso, conferir a tabela com o admin center (Licenciamento > Planos de cobrança).
+
+## Edge abrindo no Microsoft 365 Copilot (AUTO-26): validado
+
+**Situação:** veio só o relatório (`originais/26-navegadores-relatorio.docx`), que dá o script `26-navegadores-m365-copilot.ps1` v8 como validado no laboratório do autor. O script não veio, então o item foi montado a partir do relatório: mesmos endpoints beta do Intune (`configurationPolicies`, `configurationSettings/{id}`), windows10/mdm, HomepageLocation e NewTabPageLocation habilitados com a URL do Copilot, política criada sem atribuição e idempotente, atribuição só a grupo piloto, desabilitar = remover atribuições, reverter = excluir só a política do item. O formato do corpo do POST (instância de escolha com filho de texto) é o padrão do Settings Catalog, mas não foi conferido contra o script original.
+
+**Teste manual (17/11/2026, CRM332072):** `Teste-AUTO26.ps1` passou pelo login, escopos e função (Administrador Global) e parou na primeira leitura do Intune: *Request not applicable to target tenant*. O tenant só tem `INTUNE_O365` (mobilidade básica do Office 365) em *PendingActivation*, que não habilita o Settings Catalog.
+
+**No instalador (v1.11.0), sem teste real:** consulta (com aviso "Bloqueado: tenant sem Intune"), criar com prévia em `corpo-proposto.json` e conferência dos dois valores lendo de volta, atribuir/desabilitar/excluir com CONFIRMO, e passo a passo para conferir num dispositivo (`edge://policy`). Diferença do relatório: em vez do prefixo LAB-AUTO26, a política do item é reconhecida pela marca "Criada pelo Readiness Deploy Accelerator" na descrição e pelo ID guardado em `referencia-politica.json`.
+
+**Teste pelo instalador (18/11/2026, tenant Bizapp, v1.15.0):** a etapa Criar funcionou. A política "Edge - Microsoft 365 Copilot" foi criada (ID 4678bc4e-…) sem atribuição, e a conferência leu de volta HomepageLocation e NewTabPageLocation habilitados com `https://copilot.cloud.microsoft/`. O aviso de `-NoTypeInformation` obsoleto no PowerShell 7 foi removido na v1.15.1 (não afetava o resultado). Na mesma rodada, atribuir ao grupo piloto, desabilitar e excluir também funcionaram. Etiqueta "Testar" retirada na v1.15.2.
+
+**Para testar:** num tenant com Intune (ou com a avaliação do Intune Plan 1 ativada), rodar `testes-manuais/Teste-AUTO26.ps1` ou o item no instalador, conferir a política no Intune admin center e, com um grupo piloto, em `edge://policy` num dispositivo. Fora do escopo: abrir o Copilot ao iniciar o Edge (RestoreOnStartup).
+
+## Alocação de Copilot Credits (AUTO-05): validado
+
+**Teste pelo instalador (18/11/2026, tenant Bizapp, v1.15.2):** ambiente Bizapp POC, 180.500 créditos disponíveis no tenant; a alocação foi feita sem erro e conferida no admin center (Licenciamento > Copilot Studio > Gerenciar Copilot Credits). Etiqueta "Testar" retirada na v1.15.3.
+
+**Ajustes da v1.15.5, depois do teste:** (1) com 81 ambientes, a lista em texto corrido na etapa de consulta ficou ilegível: agora a tela mostra só a contagem e o campo Ambiente sugere os nomes enquanto se digita (novo `sugestoesDe` no campo de texto). (2) A reconsulta da disponibilidade (`allocationsV2/availability`) continuou em 180.500 depois da alocação, sem erro: esse número é o que ainda pode ir para o ambiente e não mostra o que já está nele. A consulta e a alocação passaram a ler também a alocação do ambiente (`GET licensing/allocationsByEnvironment/{id}`, api-version 2024-10-01: `allocated` e a regra `TenantPool`), e a conferência depois do PUT usa esse valor (até 4 leituras com 10 s). Testado de novo no tenant Bizapp em 19/11/2026: tudo certo.
+
+**v3.0.0 (19/11/2026):** no catálogo em tela cheia, as duas colunas passaram a ser de grupos (1º grupo à esquerda, 2º à direita...), com os itens de cada grupo um abaixo do outro.
+
+**Situação:** o item tem script do COE (`originais/05-copilot-credits.ps1`, COE-IA-009), que o autor validou em teste prático (155.500 disponíveis, alocação de 5.000, reconsulta). Ele não foi testado aqui: o tenant de demo não tem Copilot Credits. A pedido, o script foi levado ao instalador sem teste (v1.10.0).
+
+**O que mudou para caber no instalador:** os logins vêm do instalador (sem Az.Accounts e sem Add-PowerAppsAccount) e as respostas vêm dos campos (sem Read-Host). As chamadas, os parâmetros e o corpo do PUT são os mesmos do original (conferido com dados simulados): GET `licensing/allocationsV2/availability` com o filtro de `MCSMessages` e PUT `licensing/allocationsV2`, api-version 2024-10-01, igual ao tutorial da Microsoft. As regras também: quantidade não negativa e não maior que o disponível; confirmação ALOCAR; reconsulta no fim. Acréscimos: a quantidade só aceita números sem ponto (para "5.000" não virar 5) e mensagens próprias para *TenantPoolLockedByPolicy* e *InvalidAllocationRequest*.
+
+**Para testar:** num tenant com Copilot Credits pré-pagos, consultar um ambiente de teste, alocar 5000 e conferir no admin center (Licenciamento > Copilot Studio > Gerenciar Copilot Credits). O teste manual com o original está em `testes-manuais/Teste-AUTO05.ps1`.
+
+## ALM com Pipelines (AUTO-09): testar pelo instalador
+
+**Situação:** o roteiro em Word (`originais/09-roteiro.docx`, cabeçalho COE-IA-008) usa o host da plataforma (sem ambiente host dedicado). Só a escolha dos ambientes e o preflight têm script; pipeline, Cross-Geo e deployments são feitos na tela.
+
+**Teste manual (17/11/2026, CRM332072):**
+- Primeira tentativa com DEV no Brasil, HML nos EUA e PROD no Canadá: o deployment deu *0x80040265 - Issue detected with the environment configuration for this pipeline... [Agentes IA - Homol]*. O host da plataforma fica na região do tenant (EUA) e o Cross-Geo estava desligado.
+- Com os três ambientes nos EUA: preflight ok, pipeline "Agentes IA v2" com HML e PROD, deployment DEV → HML ok.
+- `pac pipeline list` no DEV respondeu *Resource not found for the segment 'deploymentpipelines'*: as tabelas de pipeline ficam no host, e o host da plataforma é oculto. Por isso o instalador não cria nem confere o pipeline: guia a criação na tela.
+
+**No instalador (v1.9.0):** consulta, conferência de DEV/HML/PROD (Dataverse, gerenciado, região e aviso de Cross-Geo; sugere os ambientes do item 10), tornar HML e PROD gerenciados, e passo a passo do pipeline e do primeiro deployment.
+
+**O que não foi testado:** o item pelo instalador; ligar o Cross-Geo (não foi preciso).
+
 ## Apps e fluxos em soluções (AUTO-13)
 
 **Situação:** o roteiro em Word (`originais/13-roteiro.docx`, cabeçalho COE-IA-006) faz a troca à mão no admin center, dizendo que não há comando público. A documentação da Microsoft ("Add canvas apps and cloud flows to a solution by default", considerações, item 5) diz que as duas chaves da tela gravam as colunas `enablecanvasappsinsolutionsbydefault` e `enableflowsinsolutionbydefault` da tabela `organization`, listadas como graváveis. O item muda essas colunas pela Web API do Dataverse.

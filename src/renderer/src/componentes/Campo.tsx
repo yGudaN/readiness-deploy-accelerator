@@ -6,10 +6,12 @@ interface Props {
   campo: CampoDef
   valor: string
   desabilitado?: boolean
+  /** Itens sugeridos enquanto a pessoa digita (campo.sugestoesDe). */
+  sugestoes?: string[]
   onChange: (valor: string) => void
 }
 
-export function Campo({ campo, valor, desabilitado, onChange }: Props) {
+export function Campo({ campo, valor, desabilitado, sugestoes, onChange }: Props) {
   // So mostra o erro depois que a pessoa sai do campo ou se ele ja veio preenchido
   const [tocado, setTocado] = useState(false)
   const erro = validarCampo(campo, valor)
@@ -47,11 +49,20 @@ export function Campo({ campo, valor, desabilitado, onChange }: Props) {
         placeholder={campo.placeholder}
         disabled={desabilitado}
         spellCheck={false}
+        list={sugestoes?.length ? `${id}-sugestoes` : undefined}
+        autoComplete="off"
         onChange={(e) => onChange(e.target.value)}
         onBlur={() => setTocado(true)}
         aria-invalid={mostrarErro}
         aria-describedby={`${id}-info`}
       />
+      {sugestoes?.length ? (
+        <datalist id={`${id}-sugestoes`}>
+          {sugestoes.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      ) : null}
       <div id={`${id}-info`}>
         {mostrarErro ? <div className="campo__erro">{erro}</div> : campo.ajuda && <div className="campo__ajuda">{campo.ajuda}</div>}
       </div>

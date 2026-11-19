@@ -12,7 +12,7 @@ Electron (telas em React)  ──IPC──▶  processo principal  ──spawn�
 
 - **Telas:** pré-requisitos → catálogo → etapas de cada item escolhido → resumo.
 - **PowerShell 7 não vem no instalador.** O cliente instala antes; a tela de pré-requisitos confere a versão e mostra o link de instalação. Os módulos PowerShell exigidos (ex.: PnP.PowerShell) podem ser instalados pelo próprio app, com `Install-Module -Scope CurrentUser`.
-- **Cada item do catálogo é um módulo** em `modules/<id>/`, com um `module.json` e os scripts. A interface é montada a partir do manifesto: para incluir um item novo não é preciso mexer no código do app. O campo `categoria` coloca o item num dos grupos do catálogo (os mesmos do checklist do COE: Habilitação, Comunidade, Experiência, Medição, Monitoramento, Acessos, Custos e consumo (FinOps), Segurança e conformidade, Agentes e ALM; a lista fica em `src/shared/tipos.ts` e o validador recusa outro nome).
+- **Cada item do catálogo é um módulo** em `modules/<id>/`, com um `module.json` e os scripts. A interface é montada a partir do manifesto: para incluir um item novo não é preciso mexer no código do app. Itens que ainda não foram testados num tenant real levam `"testar": true`: o catálogo mostra a etiqueta "Testar" (tirar a marca depois do teste). O campo `categoria` coloca o item num dos grupos do catálogo (os mesmos do checklist do COE: Habilitação, Comunidade, Experiência, Medição, Monitoramento, Acessos, Custos e consumo (FinOps), Segurança e conformidade, Agentes e ALM; a lista fica em `src/shared/tipos.ts` e o validador recusa outro nome).
 - **O login é feito pelo próprio instalador**, não pelos scripts. A pessoa escolhe no canto inferior esquerdo em qual navegador os logins e links abrem (a lista vem dos navegadores registrados no Windows). O app abre a página da Microsoft nesse navegador, recebe a resposta em `http://localhost:<porta>` (fluxo authorization code + PKCE) e entrega o token ao script. Um mesmo login serve para todas as etapas que usam o mesmo app e tenant.
 
 ## Estrutura
@@ -24,6 +24,31 @@ ReadinessDeployAccelerator/
 │   │   ├── module.json
 │   │   └── scripts/                            AlertasAtividade.psm1 (funções do script validado),
 │   │                                           01-consultar, 02-criar, 03-estado
+│   ├── mcp-agentes/                            AUTO-12
+│   │   ├── module.json
+│   │   └── scripts/                            McpAgentes.psm1, 01-consultar, 02-clientes
+│   ├── bloqueio-ia/                            AUTO-27
+│   │   ├── module.json
+│   │   └── scripts/                            BloqueioIa.psm1 (montado a partir do relatório),
+│   │                                           01-registrar-app, 02-consultar, 03-aplicar
+│   ├── powerbi-kpis/                           AUTO-35
+│   │   ├── module.json
+│   │   └── scripts/                            PowerBiKpis.psm1 (lógica do script do relatório),
+│   │                                           01-consultar, 02-instalar
+│   ├── inventario-payg/                        AUTO-04
+│   │   ├── module.json
+│   │   └── scripts/                            01-inventario (lógica do script do COE, somente leitura)
+│   ├── edge-copilot/                           AUTO-26
+│   │   ├── module.json
+│   │   └── scripts/                            EdgeCopilot.psm1 (montado a partir do relatório),
+│   │                                           01-consultar, 02-criar, 03-atribuicao
+│   ├── copilot-credits/                        AUTO-05
+│   │   ├── module.json
+│   │   └── scripts/                            CopilotCredits.psm1 (lógica do script do COE),
+│   │                                           01-ambientes, 02-consultar, 03-alocar
+│   ├── alm-pipelines/                          AUTO-09
+│   │   ├── module.json
+│   │   └── scripts/                            AlmPipelines.psm1, 01-consultar, 02-preflight, 03-gerenciados
 │   ├── solucoes-por-padrao/                    AUTO-13
 │   │   ├── module.json
 │   │   └── scripts/                            SolucoesPorPadrao.psm1, 01-consultar, 02-aplicar
@@ -192,6 +217,9 @@ Os itens que vêm dos scripts validados no laboratório seguem os padrões do gu
 
 ## O que ainda falta
 
+- **MCP e recursos para agentes (AUTO-12):** testar pelo instalador; liberar e bloquear cliente ainda não rodaram de verdade. Veja [PENDENCIAS.md](PENDENCIAS.md).
+- **Power BI de KPIs (AUTO-35):** testar pelo instalador; falta o PBIX "tudo em 1" oficial. Veja [PENDENCIAS.md](PENDENCIAS.md).
+- **ALM com Pipelines (AUTO-09):** testar pelo instalador. Veja [PENDENCIAS.md](PENDENCIAS.md).
 - **Ambientes DEV, HML e PROD (AUTO-10):** testar pelo instalador. Veja [PENDENCIAS.md](PENDENCIAS.md).
 - **Configurações do Dataverse (AUTO-11):** testar pelo instalador; instalar idioma ainda não rodou de verdade (o ambiente de teste só oferecia o inglês). Veja [PENDENCIAS.md](PENDENCIAS.md).
 - **Environment Routing: regras de roteamento** em aberto com o time. Veja [PENDENCIAS.md](PENDENCIAS.md).

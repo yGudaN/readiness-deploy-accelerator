@@ -1,0 +1,59 @@
+{
+  "id": "inventario-payg",
+  "nome": "Inventário PAYG do Copilot Studio",
+  "categoria": "Custos e consumo (FinOps)",
+  "versao": "1.0.0",
+  "resumo": "Lista os ambientes com pagamento por uso (PAYG), a assinatura do Azure de cada um e os Copilot Credits disponíveis.",
+  "descricao": "Somente leitura: lista os planos de cobrança por uso (pay-as-you-go) do tenant, os ambientes vinculados a cada um, a assinatura e o grupo de recursos do Azure que pagam a conta e os Copilot Credits disponíveis em cada ambiente. Nada é criado, alterado ou removido. A lista completa fica num CSV na pasta de evidências.",
+  "oQueInstala": [
+    "Nada: o item só lê o tenant",
+    "Inventário em CSV: ambiente, plano de cobrança, assinatura do Azure, grupo de recursos e Copilot Credits disponíveis"
+  ],
+  "tempoEstimadoMin": 3,
+  "papeisNecessarios": [
+    "Administrador do Power Platform ou Administrador Global"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "inventario",
+      "titulo": "Gerar o inventário",
+      "descricao": "Somente leitura: lista os planos de cobrança por uso, os ambientes vinculados e os Copilot Credits disponíveis em cada um. O orçamento não aparece porque o plano de cobrança clássico não informa esse valor. Os Copilot Credits disponíveis são capacidade, não gasto em moeda.",
+      "script": {
+        "arquivo": "scripts/01-inventario.ps1",
+        "rotuloBotao": "Gerar o inventário",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "Admin",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://service.powerapps.com//.default",
+            "proposito": "Ler os ambientes do Power Platform"
+          },
+          {
+            "nome": "PowerPlatform",
+            "clientId": "@power-platform-cli",
+            "tenant": "organizations",
+            "escopo": "https://api.powerplatform.com/.default",
+            "proposito": "Ler os planos de cobrança e os Copilot Credits"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Planos de cobrança por uso", "valor": "{{BillingPolicies}}" },
+      { "rotulo": "Ambientes com pagamento por uso", "valor": "{{AmbientesPayg}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir os planos de cobrança no admin center", "url": "https://admin.powerplatform.microsoft.com/billing/licenses/billingPolicies" }
+    ]
+  }
+}

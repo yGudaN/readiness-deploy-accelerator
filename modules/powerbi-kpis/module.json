@@ -1,0 +1,107 @@
+{
+  "id": "powerbi-kpis",
+  "nome": "Power BI de KPIs",
+  "categoria": "Medição",
+  "versao": "1.0.0",
+  "resumo": "Instala ou atualiza o relatório Power BI de KPIs num workspace.",
+  "descricao": "Publica o relatório Power BI de KPIs (arquivo .pbix) num workspace informado. Se o relatório já existe no workspace, ele é atualizado, sem criar outro. Depois confere que ficou um único relatório com o nome do arquivo e mostra o link para abrir. Fontes, credenciais e gateway do modelo semântico são configurados à parte, no Power BI. Começa consultando os workspaces e guarda um pacote de evidências de cada execução.",
+  "oQueInstala": [
+    "O relatório Power BI de KPIs e o modelo semântico no workspace escolhido",
+    "Se o relatório já existe, ele é atualizado (substituído pela versão do arquivo)",
+    "Requer licença Power BI Pro (ou Fabric) e um workspace compartilhado"
+  ],
+  "tempoEstimadoMin": 5,
+  "papeisNecessarios": [
+    "Administrador, Membro ou Colaborador do workspace do Power BI"
+  ],
+  "preRequisitos": [
+    { "tipo": "pwsh", "versaoMinima": "7.4" }
+  ],
+  "etapas": [
+    {
+      "id": "consultar",
+      "titulo": "Consultar os workspaces",
+      "descricao": "Somente leitura: confere a conta e lista os workspaces do Power BI que ela acessa. Nada é alterado.",
+      "script": {
+        "arquivo": "scripts/01-consultar.ps1",
+        "rotuloBotao": "Consultar",
+        "obrigatorio": true,
+        "entradas": [],
+        "tokens": [
+          {
+            "nome": "PowerBI",
+            "clientId": "@azure-powershell",
+            "tenant": "organizations",
+            "escopo": "https://analysis.windows.net/powerbi/api/.default",
+            "proposito": "Ler e publicar relatórios no Power BI"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instalar",
+      "titulo": "Instalar ou atualizar o relatório",
+      "descricao": "Publica o arquivo no workspace. Se já existe um relatório com o mesmo nome, ele é substituído pela versão do arquivo. O nome do relatório é o nome do arquivo, sem a extensão.",
+      "situacao": {
+        "titulo": "Situação atual",
+        "itens": [
+          { "rotulo": "Workspaces da conta", "valor": "{{ListaWorkspaces}}", "alertaQuando": ["Nenhum"] },
+          { "rotulo": "Último relatório", "valor": "{{EstadoRelatorio}}" }
+        ],
+        "nota": "Use um workspace compartilhado: o \"Meu workspace\" não é aceito."
+      },
+      "campos": [
+        {
+          "id": "Workspace",
+          "rotulo": "Workspace",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "Nome ou ID do workspace",
+          "ajuda": "Nome como aparece na lista acima, ou o ID (o trecho depois de /groups/ na URL do workspace)."
+        },
+        {
+          "id": "PbixPath",
+          "rotulo": "Arquivo do relatório (.pbix)",
+          "tipo": "texto",
+          "obrigatorio": true,
+          "placeholder": "C:\\Relatorios\\KPIs.pbix",
+          "padraoRegex": "^.+\\.[pP][bB][iI][xX]\"?$",
+          "mensagemRegex": "Informe o caminho completo de um arquivo .pbix.",
+          "ajuda": "Caminho completo do arquivo neste computador."
+        },
+        {
+          "id": "ConfirmacaoInstalar",
+          "rotulo": "Confirmação",
+          "tipo": "texto",
+          "placeholder": "INSTALAR",
+          "ajuda": "Confira o workspace e o arquivo e digite INSTALAR. O campo é limpo depois de cada execução."
+        }
+      ],
+      "script": {
+        "arquivo": "scripts/02-instalar.ps1",
+        "rotuloBotao": "Instalar",
+        "obrigatorio": true,
+        "entradas": ["TenantId", "Conta", "Workspace", "PbixPath", "ConfirmacaoInstalar"],
+        "tokens": [
+          {
+            "nome": "PowerBI",
+            "clientId": "@azure-powershell",
+            "tenant": "organizations",
+            "escopo": "https://analysis.windows.net/powerbi/api/.default",
+            "proposito": "Ler e publicar relatórios no Power BI"
+          }
+        ]
+      }
+    }
+  ],
+  "resumoFinal": {
+    "itens": [
+      { "rotulo": "Conta", "valor": "{{Conta}}" },
+      { "rotulo": "Relatório", "valor": "{{EstadoRelatorio}}" },
+      { "rotulo": "Evidências", "valor": "{{PastaEvidencias}}" }
+    ],
+    "links": [
+      { "rotulo": "Abrir o relatório", "url": "{{LinkRelatorio}}" }
+    ]
+  }
+}
