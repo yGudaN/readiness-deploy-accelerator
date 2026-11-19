@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Readiness Deploy Accelerator · Bizapp</title>
+<meta name="description" content="Aplicativo da Bizapp que implanta as soluções do COE de Copilot e Power Platform no seu tenant, em etapas guiadas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --biz-dark-purple: #8034AE;
+  --biz-purple: #953CCC;
+  --biz-light-purple: #AD46ED;
+  --biz-fucsia: #CB61E8;
+  --biz-off-white: #F3F2F5;
+  --biz-white: #FFFFFF;
+  --biz-black: #06010A;
+  --biz-gradient-01: linear-gradient(135deg, #8034AE 0%, #CB61E8 100%);
+  --biz-glow: 0 8px 24px rgba(149, 60, 204, .35);
+  --biz-font: 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --texto-suave: #4a4452;
+  --raio: 20px;
+  --larg: 1200px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+body {
+  margin: 0; font-family: var(--biz-font); font-weight: 400; letter-spacing: -0.03em;
+  color: var(--biz-black); background: var(--biz-white); line-height: 1.6; font-size: 16px;
+}
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.05em; line-height: 1.08; margin: 0 0 .5em; }
+a { color: var(--biz-purple); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--biz-light-purple); outline-offset: 3px; }
+.envolve { max-width: var(--larg); margin: 0 auto; padding: 0 24px; }
+.secao { padding: 104px 0; }
+.secao--alt { background: var(--biz-off-white); }
+.sobretitulo { font-size: 14px; font-weight: 600; color: var(--biz-purple); letter-spacing: -0.02em; margin-bottom: 12px; }
+.secao h2 { font-size: 40px; max-width: 18ch; }
+.lead { font-size: 18px; color: var(--texto-suave); max-width: 62ch; margin: 0 0 48px; }
+
+/* ---------- Cabecalho ---------- */
+.topo {
+  position: sticky; top: 0; z-index: 10; background: rgba(6, 1, 10, .92);
+  backdrop-filter: saturate(140%) blur(10px); border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.topo .envolve { display: flex; align-items: center; gap: 32px; height: 68px; }
+.topo__logo img { height: 26px; display: block; }
+.topo nav { display: flex; gap: 24px; margin-left: auto; }
+.topo nav a { color: rgba(255,255,255,.78); text-decoration: none; font-size: 14px; }
+.topo nav a:hover { color: #fff; }
+
+/* ---------- Botoes ---------- */
+.botao {
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none; cursor: pointer;
+  font-family: inherit; font-weight: 600; font-size: 16px; letter-spacing: -0.03em;
+  padding: 14px 28px; border-radius: 999px; border: 0; transition: box-shadow .2s ease, transform .2s ease;
+}
+.botao svg { width: 18px; height: 18px; flex: none; }
+.botao--primario { background: var(--biz-gradient-01); color: #fff; box-shadow: var(--biz-glow); }
+.botao--primario:hover { box-shadow: 0 12px 32px rgba(149, 60, 204, .5); transform: translateY(-1px); }
+.botao--claro { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.7); padding: 13px 27px; }
+.botao--claro:hover { border-color: #fff; }
+.botao--pequeno { padding: 9px 18px; font-size: 14px; }
+.botao[aria-busy="true"] { opacity: .75; cursor: progress; }
+
+/* ---------- Hero ---------- */
+.hero { position: relative; overflow: hidden; background: var(--biz-black); color: #fff; padding: 112px 0 120px; }
+.hero::before, .hero::after {
+  content: ""; position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; pointer-events: none;
+}
+.hero::before { width: 620px; height: 620px; right: -140px; top: -200px; background: radial-gradient(circle, #953CCC, transparent 70%); }
+.hero::after { width: 520px; height: 520px; right: 260px; bottom: -320px; background: radial-gradient(circle, #CB61E8, transparent 70%); opacity: .35; }
+.hero .envolve { position: relative; z-index: 1; }
+.hero__selo {
+  display: inline-block; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.25); color: var(--biz-off-white); margin-bottom: 28px;
+}
+.hero h1 { font-size: 64px; max-width: 14ch; margin-bottom: 24px; }
+.hero p { font-size: 19px; color: rgba(243,242,245,.86); max-width: 56ch; margin: 0 0 40px; }
+.hero__acoes { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.hero__info { margin-top: 18px; font-size: 14px; color: rgba(243,242,245,.65); }
+.hero__numeros { display: flex; gap: 56px; margin-top: 72px; flex-wrap: wrap; }
+.hero__numeros strong { display: block; font-size: 40px; font-weight: 600; letter-spacing: -0.05em; line-height: 1; }
+.hero__numeros span { font-size: 14px; color: rgba(243,242,245,.7); }
+
+/* ---------- Passos ---------- */
+.passos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: passo; }
+.passo { background: var(--biz-white); border-radius: var(--raio); padding: 28px; }
+.secao:not(.secao--alt) .passo { background: var(--biz-off-white); }
+.passo::before {
+  counter-increment: passo; content: counter(passo); display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; background: var(--biz-gradient-01); color: #fff;
+  font-weight: 600; font-size: 15px; letter-spacing: 0; margin-bottom: 20px;
+}
+.passo h3 { font-size: 20px; }
+.passo p { margin: 0; color: var(--texto-suave); font-size: 15px; }
+
+/* ---------- Bento ---------- */
+.bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.cartao { background: var(--biz-off-white); border-radius: var(--raio); padding: 32px; transition: box-shadow .2s ease; }
+.cartao:hover { box-shadow: 0 12px 32px rgba(6,1,10,.08); }
+.cartao h3 { font-size: 20px; }
+.cartao p { margin: 0; color: var(--texto-suave); font-size: 15px; }
+.cartao--destaque { grid-row: span 2; background: var(--biz-gradient-01); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; }
+.cartao--destaque h3 { font-size: 28px; }
+.cartao--destaque p { color: rgba(255,255,255,.9); font-size: 16px; }
+.cartao--largo { grid-column: span 2; }
+
+/* ---------- Catalogo (35 pontos) ---------- */
+.pontos { display: grid; grid-template-columns: 7fr 5fr; gap: 24px; align-items: start; }
+.pontos__bloco { background: var(--biz-white); border-radius: var(--raio); padding: 28px 28px 16px; }
+.pontos__cabeca { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.pontos__cabeca h3 { font-size: 24px; margin: 0; }
+.contador { font-size: 13px; font-weight: 600; letter-spacing: 0; padding: 3px 10px; border-radius: 999px; background: var(--biz-off-white); color: var(--biz-purple); }
+.pontos__bloco--auto .contador { background: var(--biz-gradient-01); color: #fff; }
+.pontos__legenda { margin: 0 0 12px; font-size: 14px; color: var(--texto-suave); }
+.pontos__bloco ul.pontos__lista { list-style: none; margin: 0; padding: 0; }
+.ponto { border-top: 1px solid var(--biz-off-white); }
+.ponto summary, .ponto--manual { display: flex; gap: 14px; align-items: flex-start; padding: 14px 0; }
+.ponto summary { cursor: pointer; list-style: none; }
+.ponto summary::-webkit-details-marker { display: none; }
+.ponto summary::after { content: "+"; margin-left: auto; color: var(--biz-purple); font-size: 22px; line-height: 1.1; transition: transform .2s ease; }
+.ponto[open] summary::after { transform: rotate(45deg); }
+.ponto summary:hover strong { color: var(--biz-purple); }
+.ponto__id { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--biz-off-white); color: var(--biz-purple); font-weight: 600; font-size: 13px; letter-spacing: 0; }
+details.ponto .ponto__id { background: var(--biz-gradient-01); color: #fff; }
+.ponto__texto { display: flex; flex-direction: column; min-width: 0; }
+.ponto__texto strong { font-weight: 600; letter-spacing: -0.03em; line-height: 1.35; }
+.ponto__texto span { font-size: 13px; color: var(--texto-suave); }
+.ponto__texto em { font-style: normal; font-size: 13px; color: var(--texto-suave); margin-top: 4px; padding-left: 10px; border-left: 2px solid var(--biz-light-purple); }
+.ponto__detalhes { padding: 0 0 18px 48px; font-size: 15px; color: var(--texto-suave); }
+.ponto__detalhes p { margin: 0 0 10px; }
+.ponto__resumo { color: var(--biz-black); font-weight: 600; letter-spacing: -0.03em; }
+.ponto__subtitulo { font-size: 13px; font-weight: 600; color: var(--biz-purple); margin: 14px 0 6px; }
+.ponto__detalhes ul { margin: 0 0 12px; padding-left: 18px; }
+.ponto__detalhes li { margin-bottom: 4px; }
+.etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.etiqueta { font-size: 12px; letter-spacing: -0.01em; padding: 4px 10px; border-radius: 999px; background: var(--biz-off-white); color: var(--biz-black); }
+
+/* ---------- Requisitos ---------- */
+.requisitos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.requisitos .cartao a { font-weight: 600; }
+
+/* ---------- Codigo ---------- */
+.codigo { display: grid; grid-template-columns: 5fr 7fr; gap: 16px; align-items: stretch; }
+.codigo__repo { background: var(--biz-black); color: #fff; border-radius: var(--raio); padding: 36px; display: flex; flex-direction: column; gap: 20px; }
+.codigo__repo h3 { font-size: 26px; margin: 0; }
+.codigo__repo p { margin: 0; color: rgba(243,242,245,.8); font-size: 15px; }
+.codigo__repo .endereco { font-family: Consolas, 'Cascadia Code', monospace; font-size: 14px; letter-spacing: 0; color: var(--biz-off-white); word-break: break-all; }
+.codigo__repo .botao { align-self: flex-start; margin-top: auto; }
+.codigo .passos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.codigo .passo { background: var(--biz-white); min-width: 0; }
+.passo pre { margin: 12px 0 0; background: var(--biz-off-white); border-radius: 10px; padding: 10px 12px; overflow-x: auto; }
+.passo pre code { background: none; padding: 0; font-size: 13px; white-space: pre-wrap; word-break: break-all; }
+
+/* ---------- Duvidas ---------- */
+.duvidas { max-width: 820px; }
+.duvidas details { border-top: 1px solid #e3e0e8; padding: 20px 0; }
+.duvidas details:last-child { border-bottom: 1px solid #e3e0e8; }
+.duvidas summary { cursor: pointer; font-weight: 600; font-size: 18px; letter-spacing: -0.04em; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.duvidas summary::-webkit-details-marker { display: none; }
+.duvidas summary::after { content: "+"; color: var(--biz-purple); font-size: 22px; line-height: 1; transition: transform .2s ease; }
+.duvidas details[open] summary::after { transform: rotate(45deg); }
+.duvidas details p { margin: 12px 0 0; color: var(--texto-suave); }
+code { font-family: Consolas, 'Cascadia Code', monospace; font-size: .92em; background: var(--biz-off-white); padding: 1px 6px; border-radius: 6px; letter-spacing: 0; }
+
+/* ---------- Chamada final e rodape ---------- */
+.chamada { background: var(--biz-black); color: #fff; position: relative; overflow: hidden; text-align: center; }
+.chamada::before { content: ""; position: absolute; inset: auto 0 -260px 0; margin: auto; width: 760px; height: 420px; border-radius: 50%; background: radial-gradient(circle, #953CCC, transparent 70%); filter: blur(80px); opacity: .5; }
+.chamada .envolve { position: relative; }
+.chamada h2 { font-size: 48px; margin: 0 auto 20px; max-width: 16ch; }
+.chamada p { color: rgba(243,242,245,.8); margin: 0 auto 36px; max-width: 52ch; font-size: 18px; }
+.rodape { background: var(--biz-black); color: rgba(243,242,245,.6); font-size: 13px; padding: 28px 0; border-top: 1px solid rgba(255,255,255,.08); }
+.rodape .envolve { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.rodape a { color: var(--biz-off-white); }
+.chamada__acoes { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+@media (max-width: 960px) {
+  .passos { grid-template-columns: repeat(2, 1fr); }
+  .bento, .requisitos, .codigo { grid-template-columns: 1fr; }
+  .cartao--destaque { grid-row: auto; min-height: 220px; }
+  .cartao--largo { grid-column: auto; }
+  .pontos { grid-template-columns: 1fr; }
+  .topo nav { display: none; }
+  .topo .botao { margin-left: auto; }
+}
+@media (max-width: 600px) {
+  .secao { padding: 72px 0; }
+  .hero { padding: 72px 0 80px; }
+  .hero h1 { font-size: 40px; }
+  .secao h2, .chamada h2 { font-size: 32px; }
+  .passos, .codigo .passos { grid-template-columns: 1fr; }
+  .pontos__bloco { padding: 22px 18px 10px; }
+  .ponto__detalhes { padding-left: 0; }
+  .hero__numeros { gap: 32px; margin-top: 48px; }
+  .topo .botao span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="envolve">
+    <a class="topo__logo" href="#inicio" aria-label="Bizapp, início"><img src="{{LOGO}}" alt="Bizapp"></a>
+    <nav aria-label="Seções">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#requisitos">Requisitos</a>
+      <a href="#instalar">Como instalar</a>
+      <a href="#codigo">Código</a>
+      <a href="#duvidas">Dúvidas</a>
+    </nav>
+    <a class="botao botao--primario botao--pequeno js-baixar" href="{{ARQUIVO}}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+      <span>Baixar</span>
+    </a>
+  </div>
+</header>
+
+<main>
+<section class="hero" id="inicio">
+  <div class="envolve">
+    <div class="hero__selo">Versão {{VERSAO}} · COE Bizapp</div>
+    <h1>Implante o COE de Copilot em etapas guiadas.</h1>
+    <p>O Readiness Deploy Accelerator é o aplicativo da Bizapp que configura no seu tenant as soluções do COE de Microsoft 365 Copilot, Copilot Studio e Power Platform. Você escolhe os itens, preenche poucos dados e ele faz o resto, sempre consultando antes de alterar.</p>
+    <div class="hero__acoes">
+      <a class="botao botao--primario js-baixar" href="{{ARQUIVO}}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+        Baixar para Windows
+      </a>
+      <a class="botao botao--claro" href="#catalogo">Ver o catálogo</a>
+    </div>
+    <div class="hero__info">Windows 10 ou 11 (64 bits) · instalador de {{TAMANHO}} · não exige administrador para instalar</div>
+    <div class="hero__numeros">
+      <div><strong>{{QTD_AUTOMATIZADOS}}</strong><span>pontos automatizados</span></div>
+      <div><strong>{{QTD_PONTOS}}</strong><span>pontos do COE mapeados</span></div>
+      <div><strong>~{{TEMPO_HORAS}} h</strong><span>para implantar o catálogo inteiro</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="secao" id="como-funciona">
+  <div class="envolve">
+    <div class="sobretitulo">Como funciona</div>
+    <h2>Do download ao tenant configurado.</h2>
+    <p class="lead">O aplicativo conduz cada item do começo ao fim. Não é preciso abrir o PowerShell, copiar scripts nem montar chamadas de API.</p>
+    <div class="passos">
+      <div class="passo"><h3>Pré-requisitos</h3><p>Confere o computador: versão do PowerShell e os módulos que os itens escolhidos usam. O que faltar pode ser instalado pelo próprio app.</p></div>
+      <div class="passo"><h3>Catálogo</h3><p>Você marca o que quer configurar, agrupado pelas áreas do COE. Cada item mostra o que instala, o tempo estimado e os papéis necessários.</p></div>
+      <div class="passo"><h3>Etapas guiadas</h3><p>Cada item começa com uma consulta somente leitura. Alterações pedem confirmação e são conferidas lendo o tenant de novo.</p></div>
+      <div class="passo"><h3>Resumo e evidências</h3><p>No fim, um resumo com os dados de cada item e uma pasta de evidências (CSV e logs) de cada execução, para auditoria e manutenção.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="secao secao--alt" id="diferenciais">
+  <div class="envolve">
+    <div class="sobretitulo">Feito para ambientes corporativos</div>
+    <h2>Seguro por padrão, do primeiro clique ao resumo.</h2>
+    <p class="lead">As decisões de projeto pensam em quem administra o tenant e em quem precisa auditar depois.</p>
+    <div class="bento">
+      <div class="cartao cartao--destaque">
+        <h3>Primeiro consulta, depois altera.</h3>
+        <p>Todo item abre com uma leitura do tenant, sem mudar nada. Mudanças só acontecem com a sua confirmação e são conferidas logo em seguida.</p>
+      </div>
+      <div class="cartao"><h3>Login pela própria Microsoft</h3><p>O login acontece na página oficial da Microsoft, no navegador que você escolher. Os acessos ficam só na memória e somem ao fechar o app.</p></div>
+      <div class="cartao"><h3>Evidências de tudo</h3><p>Cada execução gera uma pasta com contexto, estado antes e depois e resumo, pronta para auditoria.</p></div>
+      <div class="cartao cartao--largo"><h3>Nada de surpresa</h3><p>O app só executa os scripts do catálogo, só abre links seguros e só instala os módulos PowerShell que algum item declara. Itens que alteram o tenant pedem uma palavra de confirmação antes de rodar.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="secao" id="catalogo">
+  <div class="envolve">
+    <div class="sobretitulo">Catálogo</div>
+    <h2>Os {{QTD_PONTOS}} pontos do COE de Copilot.</h2>
+    <p class="lead">{{QTD_AUTOMATIZADOS}} pontos já são implantados pelo aplicativo e {{QTD_MANUAIS}} continuam manuais. Os números são os mesmos do acompanhamento do COE. Clique num item automatizado para ver o que ele faz.</p>
+  </div>
+  <div class="secao--alt" style="padding: 48px 0;">
+    <div class="envolve">
+      <div class="pontos">
+        <div class="pontos__bloco pontos__bloco--auto">
+          <div class="pontos__cabeca"><h3>Automatizado</h3><span class="contador">{{QTD_AUTOMATIZADOS}}</span></div>
+          <p class="pontos__legenda">No aplicativo, com etapas guiadas e evidências.</p>
+{{AUTOMATIZADOS}}
+        </div>
+        <div class="pontos__bloco">
+          <div class="pontos__cabeca"><h3>Manual</h3><span class="contador">{{QTD_MANUAIS}}</span></div>
+          <p class="pontos__legenda">Fora do aplicativo: dependem de decisão do cliente ou não dão para automatizar.</p>
+          <ul class="pontos__lista">
+{{MANUAIS}}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="secao secao--alt" id="requisitos">
+  <div class="envolve">
+    <div class="sobretitulo">Pré-requisitos</div>
+    <h2>O que você precisa antes de começar.</h2>
+    <p class="lead">O aplicativo confere tudo isso na primeira tela e mostra o que fazer quando algo faltar.</p>
+    <div class="requisitos">
+      <div class="cartao"><h3>Windows 10 ou 11</h3><p>Em 64 bits. A instalação é só para o seu usuário e não pede administrador da máquina.</p></div>
+      <div class="cartao"><h3>PowerShell 7.4 ou superior</h3><p>Não vem no instalador. Se faltar, o app mostra o link oficial: <a href="https://aka.ms/powershell-release?tag=stable" target="_blank" rel="noopener">baixar o PowerShell</a>.</p></div>
+      <div class="cartao"><h3>Conta com permissões</h3><p>Cada item informa os papéis que precisa, como Administrador Global, do Power Platform ou do SharePoint. Os logins abrem no navegador.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="secao" id="instalar">
+  <div class="envolve">
+    <div class="sobretitulo">Como instalar</div>
+    <h2>Quatro passos e você está pronto.</h2>
+    <p class="lead">Recomendamos rodar primeiro num tenant de laboratório e começar sempre pelas etapas de consulta.</p>
+    <div class="passos">
+      <div class="passo"><h3>Baixe o instalador</h3><p>Use o botão de download desta página. O arquivo tem {{TAMANHO}}.</p></div>
+      <div class="passo"><h3>Libere o aviso do Windows</h3><p>Se aparecer "O Windows protegeu o computador", clique em <strong>Mais informações</strong> e em <strong>Executar assim mesmo</strong>.</p></div>
+      <div class="passo"><h3>Instale</h3><p>Escolha a pasta e conclua. O atalho "Readiness Deploy Accelerator" fica no menu Iniciar.</p></div>
+      <div class="passo"><h3>Abra e siga as telas</h3><p>Confira os pré-requisitos, marque os itens no catálogo e siga as etapas. Guarde o resumo no fim.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="secao secao--alt" id="codigo">
+  <div class="envolve">
+    <div class="sobretitulo">Para quem desenvolve</div>
+    <h2>Código aberto para o time evoluir.</h2>
+    <p class="lead">O código do aplicativo está no GitHub. Qualquer pessoa da Bizapp pode baixar, adicionar itens ao catálogo, corrigir etapas e gerar novas versões do instalador.</p>
+    <div class="codigo">
+      <div class="codigo__repo">
+        <h3>Repositório no GitHub</h3>
+        <p>Código do aplicativo, scripts PowerShell de cada item, guia de desenvolvimento no README e o histórico de versões.</p>
+        <span class="endereco">{{REPOSITORIO}}</span>
+        <a class="botao botao--primario" href="{{REPOSITORIO}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Abrir o repositório</a>
+      </div>
+      <div class="passos">
+        <div class="passo"><h3>Baixe o código</h3><p>Precisa do Git e do Node.js (versão LTS).</p><pre><code>git clone {{REPOSITORIO}}.git
+npm install</code></pre></div>
+        <div class="passo"><h3>Rode em modo de desenvolvimento</h3><p>Abre o aplicativo com recarga automática a cada alteração.</p><pre><code>npm run dev</code></pre></div>
+        <div class="passo"><h3>Crie ou altere um item</h3><p>Cada item é uma pasta em <code>modules/</code> com o manifesto e os scripts PowerShell. Confira tudo antes de gerar.</p><pre><code>npm run validar</code></pre></div>
+        <div class="passo"><h3>Gere a nova versão</h3><p>Atualize a versão no <code>package.json</code>, gere o instalador e abra um pull request com a mudança.</p><pre><code>npm run dist</code></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="secao" id="duvidas">
+  <div class="envolve">
+    <div class="sobretitulo">Dúvidas e problemas</div>
+    <h2>Perguntas frequentes.</h2>
+    <div class="duvidas">
+      <details>
+        <summary>O Windows bloqueou o instalador. É seguro?</summary>
+        <p>O aviso do SmartScreen aparece porque o instalador ainda não tem assinatura digital. Clique em "Mais informações" e em "Executar assim mesmo". Se a sua empresa bloqueia esse tipo de arquivo, peça ao TI para liberar o instalador.</p>
+      </details>
+      <details>
+        <summary>A tela de pré-requisitos diz que falta o PowerShell 7.</summary>
+        <p>Instale o PowerShell 7.4 ou superior pelo link que a tela mostra, feche e abra o aplicativo de novo. O Windows PowerShell 5.1, que vem com o Windows, não serve.</p>
+      </details>
+      <details>
+        <summary>O login abriu no navegador errado.</summary>
+        <p>No canto inferior esquerdo do aplicativo, escolha em qual navegador os logins e links devem abrir. Use o navegador em que você entra com a conta administrativa do tenant.</p>
+      </details>
+      <details>
+        <summary>Onde ficam as evidências?</summary>
+        <p>Em <code>Documentos\Readiness Deploy Accelerator\evidencias</code>, uma pasta por item e por execução. O botão "Abrir evidências" no resumo leva direto até lá.</p>
+      </details>
+      <details>
+        <summary>Uma etapa deu erro de permissão (401 ou 403).</summary>
+        <p>A conta usada no login não tem o papel que o item pede. Confira os papéis no catálogo (abra o item para ver os detalhes), entre com outra conta ou peça o papel ao administrador e rode a etapa de novo.</p>
+      </details>
+      <details>
+        <summary>Posso rodar o mesmo item mais de uma vez?</summary>
+        <p>Sim. As etapas reconhecem o que já existe no tenant e não criam duplicados. Rodar a consulta de novo é a forma recomendada de conferir o estado atual.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="secao chamada">
+  <div class="envolve">
+    <h2>Pronto para acelerar a sua implantação?</h2>
+    <p>Baixe a versão {{VERSAO}} e configure o primeiro item em poucos minutos.</p>
+    <div class="chamada__acoes">
+      <a class="botao botao--primario js-baixar" href="{{ARQUIVO}}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg>
+        Baixar para Windows
+      </a>
+      <a class="botao botao--claro" href="{{REPOSITORIO}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg>Ver o código</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="rodape">
+  <div class="envolve">
+    <span>Readiness Deploy Accelerator {{VERSAO}} · COE Bizapp · <a href="{{REPOSITORIO}}" target="_blank" rel="noopener">GitHub</a></span>
+    <span>Your business. Our applications.</span>
+  </div>
+</footer>
+
+</body>
+</html>

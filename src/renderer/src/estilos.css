@@ -68,6 +68,14 @@ button, input { font: inherit; letter-spacing: inherit; }
 .lateral__titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255, 255, 255, 0.5); margin: 18px 12px 6px; }
 .lateral__lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; }
 .lateral__rodape { font-size: 12px; color: rgba(255, 255, 255, 0.45); padding: 12px 12px 0; }
+/* Progresso geral da instalacao, abaixo da lista de etapas */
+.lateral__progresso { margin: 14px 4px 0; padding: 14px 14px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); }
+.lateral__progresso-cabecalho { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px; }
+.lateral__progresso-cabecalho strong { font-size: 18px; font-weight: 600; color: var(--biz-white); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.lateral__progresso-trilho { height: 8px; border-radius: var(--biz-pill); background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+.lateral__progresso-barra { height: 100%; border-radius: var(--biz-pill); background: var(--biz-gradient-01); box-shadow: 0 0 12px rgba(203, 97, 232, 0.6); transition: width 0.6s ease; }
+.lateral__progresso-barra--ativa { background-image: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%), var(--biz-gradient-01); background-size: 40% 100%, 100% 100%; background-repeat: no-repeat; animation: brilho 1.8s linear infinite; }
+.lateral__progresso-detalhe { margin-top: 8px; font-size: 11px; color: rgba(255, 255, 255, 0.55); }
 .lateral__navegador { display: flex; flex-direction: column; gap: 8px; margin: 12px 4px 0; font-size: 12px; color: rgba(255, 255, 255, 0.6); }
 
 /* ---------- Seletor (lista de escolha) ---------- */
@@ -336,6 +344,30 @@ button, input { font: inherit; letter-spacing: inherit; }
 .item-lista__subtitulo { font-weight: 600; font-size: 13px; margin-top: 4px; }
 .item-lista__instala { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--biz-cinza); }
 .item-lista__instala li::marker { color: var(--biz-purple); }
+/* Botoes Automatizado / Manual no topo do catalogo */
+.catalogo-visao { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 18px; border-radius: var(--biz-pill); background: var(--biz-off-white); }
+.catalogo-visao__botao {
+  display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font: inherit; font-weight: 600; font-size: 14px;
+  padding: 8px 18px; border-radius: var(--biz-pill); background: transparent; color: var(--biz-black);
+}
+.catalogo-visao__botao:hover { color: var(--biz-purple); }
+.catalogo-visao__botao:focus-visible { outline: 2px solid var(--biz-light-purple); outline-offset: 2px; }
+.catalogo-visao__botao--ativo, .catalogo-visao__botao--ativo:hover { background: var(--biz-gradient-01); color: var(--biz-white); box-shadow: 0 6px 18px rgba(149, 60, 204, 0.3); }
+.catalogo-visao__contagem { font-size: 12px; padding: 1px 8px; border-radius: var(--biz-pill); background: var(--biz-white); color: var(--biz-purple); }
+.catalogo-visao__botao--ativo .catalogo-visao__contagem { background: rgba(255, 255, 255, 0.22); color: var(--biz-white); }
+.catalogo-barra__contagem--esquerda { padding: 6px 0 6px 4px; }
+/* Itens manuais: so leitura, sem caixa de selecao */
+.item-manual { display: flex; gap: 14px; align-items: flex-start; padding: 14px 18px; }
+.item-manual:hover { box-shadow: none; }
+.item-manual__numero {
+  flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px;
+  background: var(--biz-off-white); color: var(--biz-purple); font-weight: 600; font-size: 12px;
+}
+.item-manual__texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.item-manual__nome { white-space: normal; }
+.item-manual .etiquetas { margin: 0; }
+.item-manual .etiqueta { background: var(--biz-off-white); }
+.item-manual__pendencia { margin: 0; font-size: 13px; color: var(--biz-cinza); }
 .catalogo-rodape { color: var(--biz-cinza); font-size: 13px; margin-top: 16px; }
 
 .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; }

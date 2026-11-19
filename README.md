@@ -140,6 +140,16 @@ npm run dist
 Atualiza o `.sppkg`, valida, compila e gera `dist/Readiness-Deploy-Accelerator-Setup-<versão>.exe`.
 
 ```bash
+npm run site
+```
+Gera o site de download `site/Bizapp_ReadinessDeployAccelerator.html` (um arquivo só, com o logo embutido) a partir de `site/modelo.html`: versão, tamanho do instalador e catálogo vêm do projeto. O catálogo do site mostra os 35 pontos do COE de `src/shared/pontos-coe.json` (a mesma lista que o app mostra no botão "Manual" do catálogo), com os mesmos números do Loop de acompanhamento: os que apontam para um módulo ficam em "Automatizado" (com os detalhes do `module.json`, como no app) e os demais em "Manual". Ao criar um módulo para um ponto, preencha `"modulo"` nele. Rode depois do `npm run dist`. O botão de download aponta para o instalador da versão nas Releases do repositório `repositorioGithub` do `package.json` (`yGudaN/readiness-deploy-accelerator`, público), e a página também tem o link para o código, para o time clonar e criar novas versões. Suba o HTML no Blob, no lugar do anterior.
+
+```bash
+npm run publicar
+```
+Cria a release `v<versão>` no GitHub com o `.exe` de `dist/` (precisa do GitHub CLI logado). Ordem a cada versão: `npm run dist`, `npm run publicar`, `npm run site` e subir o HTML.
+
+```bash
 npm run sincronizar
 ```
 Copia o `.sppkg` mais recente da pasta `implantacao/` do repositório da Biblioteca, que deve estar clonado ao lado deste (`../SharepointBibliotecaPrompt`) ou no caminho da variável `BIBLIOTECA_REPO`. Sem a origem, mantém a cópia que já está aqui. Depois de atualizar, faça commit do `.sppkg`.

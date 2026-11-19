@@ -116,6 +116,27 @@ export function App() {
 
   const passo = passos[Math.min(indice, passos.length - 1)]
 
+  /**
+   * Progresso geral da instalacao, na barra lateral: etapas dos itens escolhidos que ja foram
+   * concluidas (script com sucesso ou etapa ja deixada para tras) sobre o total. No resumo, 100%.
+   */
+  const progresso = useMemo(() => {
+    const etapas = passos.flatMap((p, i) => (p.tipo === 'etapa' ? [{ moduloId: p.modulo.id, etapaId: p.etapa.id, i }] : []))
+    if (etapas.length === 0) return null
+    const noResumo = passos[Math.min(indice, passos.length - 1)].tipo === 'resumo'
+    const feita = (e: (typeof etapas)[number]): boolean =>
+      noResumo || e.i < maxAlcancado || sucessos[chaveEtapa(e.moduloId, e.etapaId)] !== undefined
+    const itens = [...new Set(etapas.map((e) => e.moduloId))]
+    const feitas = etapas.filter(feita).length
+    return {
+      percentual: Math.round((feitas / etapas.length) * 100),
+      etapasFeitas: feitas,
+      etapasTotal: etapas.length,
+      itensFeitos: itens.filter((id) => etapas.filter((e) => e.moduloId === id).every(feita)).length,
+      itensTotal: itens.length
+    }
+  }, [passos, indice, maxAlcancado, sucessos])
+
   useEffect(() => {
     if (passo.tipo === 'conta' && !contasVisitadas.includes(passo.modulo.id)) {
       setContasVisitadas((v) => [...v, passo.modulo.id])
@@ -361,6 +382,30 @@ export function App() {
             ]
           })}
         </ol>
+        {progresso && (
+          <div className="lateral__progresso">
+            <div className="lateral__progresso-cabecalho">
+              <span>Progresso da instalação</span>
+              <strong>{progresso.percentual}%</strong>
+            </div>
+            <div
+              className="lateral__progresso-trilho"
+              role="progressbar"
+              aria-label="Progresso da instalação"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progresso.percentual}
+            >
+              <div
+                className={`lateral__progresso-barra${algumaEmAndamento ? ' lateral__progresso-barra--ativa' : ''}`}
+                style={{ width: `${progresso.percentual}%` }}
+              />
+            </div>
+            <div className="lateral__progresso-detalhe">
+              {progresso.itensFeitos} de {progresso.itensTotal} {progresso.itensTotal === 1 ? 'item' : 'itens'} · {progresso.etapasFeitas} de {progresso.etapasTotal} etapas
+            </div>
+          </div>
+        )}
         <div className="lateral__navegador">
           <span>Logins e links abrem no</span>
           <Seletor
